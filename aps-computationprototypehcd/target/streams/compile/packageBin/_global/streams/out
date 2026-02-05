@@ -1,0 +1,15 @@
+[0m[[0m[0mdebug[0m] [0m[0mPackaging /Users/smichaels/Desktop/Prototyping/computationprototype/aps-computationprototypehcd/target/scala-3.6.4/aps-computationprototypehcd_3-0.1.0.jar ...[0m
+[0m[[0m[0mdebug[0m] [0m[0mInput file mappings:[0m
+[0m[[0m[0mdebug[0m] [0m[0m	aps[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /Users/smichaels/Desktop/Prototyping/computationprototype/aps-computationprototypehcd/target/scala-3.6.4/classes/aps[0m
+[0m[[0m[0mdebug[0m] [0m[0m	aps/computationprototypehcd[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /Users/smichaels/Desktop/Prototyping/computationprototype/aps-computationprototypehcd/target/scala-3.6.4/classes/aps/computationprototypehcd[0m
+[0m[[0m[0mdebug[0m] [0m[0m	aps/computationprototypehcd/ComputationprototypehcdHandlers.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /Users/smichaels/Desktop/Prototyping/computationprototype/aps-computationprototypehcd/target/scala-3.6.4/classes/aps/computationprototypehcd/ComputationprototypehcdHandlers.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	aps/computationprototypehcd/JComputationprototypehcdHandlers.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /Users/smichaels/Desktop/Prototyping/computationprototype/aps-computationprototypehcd/target/scala-3.6.4/classes/aps/computationprototypehcd/JComputationprototypehcdHandlers.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	aps/computationprototypehcd/ComputationprototypehcdHandlers.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /Users/smichaels/Desktop/Prototyping/computationprototype/aps-computationprototypehcd/target/scala-3.6.4/classes/aps/computationprototypehcd/ComputationprototypehcdHandlers.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	reference.conf[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /Users/smichaels/Desktop/Prototyping/computationprototype/aps-computationprototypehcd/target/scala-3.6.4/classes/reference.conf[0m
+[0m[[0m[0mdebug[0m] [0m[0mDone packaging.[0m

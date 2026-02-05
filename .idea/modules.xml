@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/aps-computationprototypeassembly.iml" filepath="$PROJECT_DIR$/.idea/modules/aps-computationprototypeassembly.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/aps-computationprototypedeploy.iml" filepath="$PROJECT_DIR$/.idea/modules/aps-computationprototypedeploy.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/aps-computationprototypehcd.iml" filepath="$PROJECT_DIR$/.idea/modules/aps-computationprototypehcd.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/computationprototype-root.iml" filepath="$PROJECT_DIR$/.idea/modules/computationprototype-root.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/computationprototype-root-build.iml" filepath="$PROJECT_DIR$/.idea/modules/computationprototype-root-build.iml" />
+    </modules>
+  </component>
+</project>
