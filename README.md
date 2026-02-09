@@ -34,18 +34,13 @@ The CSW services need to be running before starting the components.
 
 Note: while running the csw-services use the csw version from `project/build.properties`
 
-## Running the HCD and Assembly
+## Running the Assembly
 
 Run the container cmd script with arguments. For example:
 
-* Run the HCD in a standalone mode with a local config file (The standalone config format is different than the container format):
+* Run the Assembly in a standalone mode with a local config file (The standalone config format is different than the container format):
 
 ```
-sbt "aps-computationprototypedeploy/runMain aps.computationprototypedeploy.ComputationprototypeContainerCmdApp --local ./src/main/resources/ComputationprototypehcdStandalone.conf"
+sbt "aps-computationprototypedeploy/runMain aps.computationprototypedeploy.ComputationprototypeContainerCmdApp --local ./src/main/resources/JComputationprototypeassemblyStandalone.conf"
 ```
 
-* Start the HCD and assembly in a container using the Java implementations:
-
-```
-sbt "aps-computationprototypedeploy/runMain aps.computationprototypedeploy.ComputationprototypeContainerCmdApp --local ./src/main/resources/JComputationprototypeContainer.conf"
-```

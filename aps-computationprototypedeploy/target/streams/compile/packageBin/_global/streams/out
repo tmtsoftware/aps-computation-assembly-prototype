@@ -1,5 +1,7 @@
 [0m[[0m[0mdebug[0m] [0m[0mPackaging /Users/smichaels/Desktop/Prototyping/computationprototype/aps-computationprototypedeploy/target/scala-3.6.4/aps-computationprototypedeploy_3-0.1.0.jar ...[0m
 [0m[[0m[0mdebug[0m] [0m[0mInput file mappings:[0m
+[0m[[0m[0mdebug[0m] [0m[0m	JComputationprototypeassemblyStandalone.conf[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /Users/smichaels/Desktop/Prototyping/computationprototype/aps-computationprototypedeploy/target/scala-3.6.4/classes/JComputationprototypeassemblyStandalone.conf[0m
 [0m[[0m[0mdebug[0m] [0m[0m	ComputationprototypeContainer.conf[0m
 [0m[[0m[0mdebug[0m] [0m[0m	  /Users/smichaels/Desktop/Prototyping/computationprototype/aps-computationprototypedeploy/target/scala-3.6.4/classes/ComputationprototypeContainer.conf[0m
 [0m[[0m[0mdebug[0m] [0m[0m	ComputationprototypeHostConfig.conf[0m
