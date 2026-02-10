@@ -31,8 +31,10 @@ object Common extends AutoPlugin {
       Tests.Argument(TestFrameworks.JUnit, "-v", "-a")
     ),
     resolvers += "jitpack" at "https://jitpack.io",
+    resolvers += Resolver.mavenLocal,
     version := "0.1.0",
     fork := true,
+    javaOptions += "-Djava.library.path=/opt/apps/lib",
     Test / parallelExecution := false,
     autoCompilerPlugins := true,
     if (formatOnCompile) scalafmtOnCompile := true else scalafmtOnCompile := false

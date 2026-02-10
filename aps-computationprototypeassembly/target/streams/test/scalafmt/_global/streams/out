@@ -1,10 +1,10 @@
-[0m[[0m[0mdebug[0m] [0m[0mscalafmt: Adding repositories [https://repo1.maven.org/maven2/,file:////Users/smichaels/.sbt/preloaded/,https://jitpack.io][0m
+[0m[[0m[0mdebug[0m] [0m[0mscalafmt: Adding repositories [https://repo1.maven.org/maven2/,file:////Users/smichaels/.sbt/preloaded/,https://jitpack.io,file:/Users/smichaels/.m2/repository/][0m
 [0m[[0m[0mdebug[0m] [0m[0mscalafmt: Adding credentials [][0m
 [0m[[0m[0mdebug[0m] [0m[0mscalafmt: considering all files (no git)[0m
 [0m[[0m[0mdebug[0m] [0m[0mscalafmt: Change report:[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Checked: /Users/smichaels/Desktop/Prototyping/computationprototype/aps-computationprototypeassembly/src/test/scala/aps/computationprototypeassembly/ComputationprototypeassemblyTest.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m	Checked: /Users/smichaels/Desktop/Prototyping/aps-computation-assembly-prototype/aps-computationprototypeassembly/src/test/scala/aps/computationprototypeassembly/ComputationprototypeassemblyTest.scala[0m
 [0m[[0m[0mdebug[0m] [0m[0m	Modified: [0m
-[0m[[0m[0mdebug[0m] [0m[0m	Unmodified: /Users/smichaels/Desktop/Prototyping/computationprototype/aps-computationprototypeassembly/src/test/scala/aps/computationprototypeassembly/ComputationprototypeassemblyTest.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m	Unmodified: /Users/smichaels/Desktop/Prototyping/aps-computation-assembly-prototype/aps-computationprototypeassembly/src/test/scala/aps/computationprototypeassembly/ComputationprototypeassemblyTest.scala[0m
 [0m[[0m[0mdebug[0m] [0m[0m	Added: [0m
 [0m[[0m[0mdebug[0m] [0m[0m	Removed: [0m
 [0m[[0m[0mdebug[0m] [0m[0mscalafmt: Unchanged 0 Scala sources[0m

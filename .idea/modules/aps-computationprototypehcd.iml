@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<module external.linked.project.id="aps-computationprototypehcd [file:/Users/smichaels/Desktop/Prototyping/computationprototype/]" external.linked.project.path="$MODULE_DIR$/../../aps-computationprototypehcd" external.root.project.path="$MODULE_DIR$/../.." external.system.id="SBT" type="JAVA_MODULE" version="4">
+<module external.linked.project.id="aps-computationprototypehcd [file:/Users/smichaels/Desktop/Prototyping/aps-computation-assembly-prototype/]" external.linked.project.path="$MODULE_DIR$/../../aps-computationprototypehcd" external.root.project.path="$MODULE_DIR$/../.." external.system.id="SBT" type="JAVA_MODULE" version="4">
   <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_17">
     <output url="file://$MODULE_DIR$/../../aps-computationprototypehcd/target/scala-3.6.4/classes" />
     <output-test url="file://$MODULE_DIR$/../../aps-computationprototypehcd/target/scala-3.6.4/test-classes" />

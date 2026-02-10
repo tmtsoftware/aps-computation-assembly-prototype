@@ -34,7 +34,10 @@ public class JComputationprototypeassemblyHandlers extends JComponentHandlers {
 
     @Override
     public void initialize() {
-    log.info("Initializing computationPrototypeAssembly...");
+
+        log.info("Initializing computationPrototypeAssembly...");
+        System.loadLibrary("peas");
+
     }
 
     @Override

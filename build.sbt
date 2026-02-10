@@ -12,7 +12,7 @@ lazy val `computationprototype-root` = project
 // assembly module
 lazy val `aps-computationprototypeassembly` = project
   .settings(
-    libraryDependencies ++= Dependencies.Computationprototypeassembly
+    libraryDependencies ++= Dependencies.Computationprototypeassembly,
   )
 
 // hcd module
