@@ -11,6 +11,9 @@ import csw.params.commands.ControlCommand;
 import csw.time.core.models.UTCTime;
 import csw.params.core.models.Id;
 
+import org.tmt.aps.peas.lang.interop.JcolorStep;
+import org.tmt.aps.peas.lang.interop.RetVal;
+
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -37,6 +40,36 @@ public class JComputationprototypeassemblyHandlers extends JComponentHandlers {
 
         log.info("Initializing computationPrototypeAssembly...");
         System.loadLibrary("peas");
+
+        AlgorithmLibrary algorithmLibrary = new AlgorithmLibrary();
+
+        int stepCount = 11;
+        float stepSizeMicrons = 20.0f;
+        float stepSizeNm = stepSizeMicrons * 1000.0f;
+        RetVal retVal = new RetVal();
+
+        log.info("computation.starting: colorStep");
+
+        try {
+
+            double t1 = System.nanoTime();
+            float[][] colorsteps = algorithmLibrary.colorStep(stepCount, stepSizeNm);
+            double t2 = System.nanoTime();
+
+            for (int i=0; i<stepCount+1; i++){
+                for (int j = 0; j < 3; j++){
+                    log.info("i,j = " + i + "," + j + "   colorstep = " + colorsteps[i][j]);
+                }
+            }
+            log.info("computation.success colorStep: time to execute = " + (t2-t1)/1000000.0 + " ms");
+
+        } catch (Exception e) {
+            log.error(e.getMessage());
+        }
+
+
+
+
 
     }
 

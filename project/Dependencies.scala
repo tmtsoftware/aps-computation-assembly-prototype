@@ -23,4 +23,9 @@ object Dependencies {
     CSW.`csw-framework`,
     CSW.`csw-testkit` % Test
   )
+
+  val Computationclient = Seq(
+    CSW.`csw-framework`,
+    CSW.`csw-testkit` % Test
+  )
 }

@@ -2,7 +2,8 @@
 lazy val aggregatedProjects: Seq[ProjectReference] = Seq(
   `aps-computationprototypeassembly`,
   `aps-computationprototypehcd`,
-  `aps-computationprototypedeploy`
+  `aps-computationprototypedeploy`,
+  `aps-computationclient`
 )
 
 lazy val `computationprototype-root` = project
@@ -19,6 +20,12 @@ lazy val `aps-computationprototypeassembly` = project
 lazy val `aps-computationprototypehcd` = project
   .settings(
     libraryDependencies ++= Dependencies.Computationprototypehcd
+  )
+
+// hcd module
+lazy val `aps-computationclient` = project
+  .settings(
+    libraryDependencies ++= Dependencies.Computationclient
   )
 
 // deploy module

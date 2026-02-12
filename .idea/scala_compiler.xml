@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ScalaCompilerConfiguration">
     <profile name="sbt 1" modules="aps-computation-assembly-prototype_1599" />
-    <profile name="sbt 2" modules="aps-computationprototypeassembly,aps-computationprototypedeploy,aps-computationprototypehcd,computationprototype-root">
+    <profile name="sbt 2" modules="aps-computationclient,aps-computationprototypeassembly,aps-computationprototypedeploy,aps-computationprototypehcd,computationprototype-root">
       <option name="deprecationWarnings" value="true" />
       <option name="uncheckedWarnings" value="true" />
       <option name="featureWarnings" value="true" />
