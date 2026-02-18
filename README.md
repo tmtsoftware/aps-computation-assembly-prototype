@@ -69,4 +69,11 @@ Run the container cmd script with arguments. For example:
 ```
 sbt "aps-computationprototypedeploy/runMain aps.computationprototypedeploy.ComputationprototypeContainerCmdApp --local ./src/main/resources/JComputationprototypeassemblyStandalone.conf"
 ```
+## Running the Test Client
+
+Run the app using sbt:
+
+```
+sbt "aps-computationclient/run"
+```
 
