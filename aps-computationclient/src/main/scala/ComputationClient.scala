@@ -79,8 +79,14 @@ object ComputationClient extends App {
         .add(stepCountKey.set(11))
         .add(stepSizeKey.set(20.0f))
 
+    val ttSetup = Setup(
+      Prefix("aps.computationprototypeassembly"),
+      CommandName("ttOffsetsToActs"),
+      None
+    )
+
     val immediateCommandF: Future[SubmitResponse] = for {
-      response <- assembly.submitAndWait(setup)
+      response <- assembly.submitAndWait(ttSetup)
     } yield response match {
       case completed: Completed =>
         log.info(s"Command completed successfully: $completed")

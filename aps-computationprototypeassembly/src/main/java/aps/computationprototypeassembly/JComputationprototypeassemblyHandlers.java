@@ -72,10 +72,17 @@ public class JComputationprototypeassemblyHandlers extends JComponentHandlers {
             this.stepSizeNm = stepSizeNm;
         }
     }
+    private static final class ExecuteTtOffsetsToActs implements WorkerCommand {
+        private final Id runId;
+        private ExecuteTtOffsetsToActs(Id runId) {
+            this.runId = runId;
+        }
+    }
 
     private ActorRef<WorkerCommand> createWorkerActor() {
         return actorContext.spawn(
                 Behaviors.receiveMessage(msg -> {
+
                     if (msg instanceof ExecuteColorStep exec) {
 
                         log.info("Worker: Starting colorStep computation");
@@ -88,10 +95,10 @@ public class JComputationprototypeassemblyHandlers extends JComponentHandlers {
                                     algorithmLibrary.colorStep(exec.stepCount, exec.stepSizeNm);
                             double t2 = System.nanoTime();
 
-                            // Flatten 2D array
                             int rows = colorsteps.length;
                             int cols = colorsteps[0].length;
                             float[] flattened = new float[rows * cols];
+
                             int index = 0;
                             for (int r = 0; r < rows; r++) {
                                 for (int c = 0; c < cols; c++) {
@@ -99,49 +106,65 @@ public class JComputationprototypeassemblyHandlers extends JComponentHandlers {
                                 }
                             }
 
-                            // Convert float[] → Float[]
                             Float[] boxed = new Float[flattened.length];
                             for (int i = 0; i < flattened.length; i++) {
                                 boxed[i] = flattened[i];
                             }
 
-                            // Wrap in ArrayData
                             ArrayData<Float> arrayData = ArrayData.fromArray(boxed);
-
-                            // Create key
                             var floatArrayKey = JKeyType.FloatArrayKey().make("flattened");
-
-                            // Create parameter
                             Parameter<ArrayData<Float>> param = floatArrayKey.set(arrayData);
 
-                            // Wrap in Result
                             Result result = new Result().add(param);
 
-                            // Create response
                             CommandResponse.Completed response =
                                     new CommandResponse.Completed(exec.runId, result);
 
-
                             log.info("Worker: Computation finished in "
-                                    + (t2 - t1) / 1000000.0 + " ms");
+                                    + (t2 - t1) / 1_000_000.0 + " ms");
 
-                            // Update Command Response Manager
-                            cswCtx.commandResponseManager()
-                                    .updateCommand(
-                                            response
-                                    );
+                            cswCtx.commandResponseManager().updateCommand(response);
 
                         } catch (Exception e) {
                             log.error("Worker error: " + e.getMessage());
+                            cswCtx.commandResponseManager()
+                                    .updateCommand(new CommandResponse.Error(exec.runId, e.getMessage()));
+                        }
 
+                    } else if (msg instanceof ExecuteTtOffsetsToActs exec) {
+
+                        log.info("Worker: Starting ttOffsetsToActs computation");
+
+                        try {
+                            AlgorithmLibrary algorithmLibrary = new AlgorithmLibrary();
+                            Configuration configuration = new Configuration();
+                            Results results = new Results();
+
+                            double t1 = System.nanoTime();
+                            algorithmLibrary.ttOffsetsToActs(configuration, results);
+                            double t2 = System.nanoTime();
+
+                            Result result = new Result();
+
+                            CommandResponse.Completed response =
+                                    new CommandResponse.Completed(exec.runId, result);
+
+                            log.info("Worker: Computation finished in "
+                                    + (t2 - t1) / 1_000_000.0 + " ms");
+
+                            cswCtx.commandResponseManager().updateCommand(response);
+
+                        } catch (Exception e) {
+                            log.error("Worker error: " + e.getMessage());
                             cswCtx.commandResponseManager()
                                     .updateCommand(new CommandResponse.Error(exec.runId, e.getMessage()));
                         }
                     }
 
+                    // ✅ This must be outside the if/else chain
                     return Behaviors.same();
                 }),
-                "ColorStepWorker"
+                "CommandWorker"
         );
     }
 
@@ -170,6 +193,9 @@ public class JComputationprototypeassemblyHandlers extends JComponentHandlers {
         if (commandName.equals("colorStep")) {
             return new CommandResponse.Accepted(runId);
         }
+        if (commandName.equals("ttOffsetsToActs")) {
+            return new CommandResponse.Accepted(runId);
+        }
 
         return new CommandResponse.Invalid(
                 runId,
@@ -184,34 +210,44 @@ public class JComputationprototypeassemblyHandlers extends JComponentHandlers {
 
         if (controlCommand instanceof Setup setup) {
 
-            Key<Integer> stepCountKey =
-                    csw.params.javadsl.JKeyType.IntKey().make("stepCount");
+            String commandName = controlCommand.commandName().name();
 
-            Key<Float> stepSizeKey =
-                    csw.params.javadsl.JKeyType.FloatKey().make("stepSizeMicrons");
+            if (commandName.equals("colorStep")) {
+                Key<Integer> stepCountKey =
+                        csw.params.javadsl.JKeyType.IntKey().make("stepCount");
 
-            var stepCountParam = setup.jGet(stepCountKey);
-            var stepSizeParam  = setup.jGet(stepSizeKey);
+                Key<Float> stepSizeKey =
+                        csw.params.javadsl.JKeyType.FloatKey().make("stepSizeMicrons");
 
-            if (stepCountParam.isEmpty() || stepSizeParam.isEmpty()) {
-                return new CommandResponse.Error(runId,
-                        "Missing required parameters: stepCount or stepSizeMicrons");
+                var stepSizeParam = setup.jGet(stepSizeKey);
+                var stepCountParam = setup.jGet(stepCountKey);
+
+                if (stepCountParam.isEmpty() || stepSizeParam.isEmpty()) {
+                    return new CommandResponse.Error(runId,
+                            "Missing required parameters: stepCount or stepSizeMicrons");
+                }
+
+                int stepCount = stepCountParam.get().head();
+                float stepSizeMicrons = stepSizeParam.get().head();
+                float stepSizeNm = stepSizeMicrons * 1000.0f;
+
+                log.info("Received parameters: stepCount=" + stepCount +
+                        ", stepSizeMicrons=" + stepSizeMicrons);
+
+                workerActor.tell(
+                        new ExecuteColorStep(runId, stepCount, stepSizeNm)
+                );
+
+                return new CommandResponse.Started(runId);
+
+            } else if (commandName.equals("ttOffsetsToActs")) {
+
+                workerActor.tell(new ExecuteTtOffsetsToActs(runId));
+
+                return new CommandResponse.Started(runId);
             }
 
-            int stepCount = stepCountParam.get().head();
-            float stepSizeMicrons = stepSizeParam.get().head();
-            float stepSizeNm = stepSizeMicrons * 1000.0f;
-
-            log.info("Received parameters: stepCount=" + stepCount +
-                    ", stepSizeMicrons=" + stepSizeMicrons);
-
-            workerActor.tell(
-                    new ExecuteColorStep(runId, stepCount, stepSizeNm)
-            );
-
-            return new CommandResponse.Started(runId);
         }
-
         return new CommandResponse.Error(runId, "Only Setup supported");
     }
 
