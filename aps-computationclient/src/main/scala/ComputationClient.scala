@@ -4,20 +4,22 @@ import java.net.InetAddress
 import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.util.Timeout
-
 import csw.command.api.scaladsl.CommandService
 import csw.command.client.CommandServiceFactory
 import csw.location.api.models.ComponentType.Assembly
-import csw.location.api.models.{ComponentId, Connection, HttpLocation, TrackingEvent, LocationRemoved, LocationUpdated}
+import csw.location.api.models.{ComponentId, Connection, HttpLocation, LocationRemoved, LocationUpdated, TrackingEvent}
 import csw.location.client.scaladsl.HttpLocationServiceFactory
 import csw.logging.client.scaladsl.{GenericLoggerFactory, LoggingSystemFactory}
-import csw.params.commands.{CommandName, Setup}
+import csw.params.commands.{CommandName, CommandResponse, ControlCommand, Setup}
 import csw.params.core.generics.{Key, KeyType}
 import csw.prefix.models.Prefix
 import csw.location.api.models.Connection.HttpConnection
+import csw.params.commands.CommandResponse.{Cancelled, Completed, Invalid, Locked, Started, SubmitResponse, Error}
+
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContextExecutor
 import scala.util.{Failure, Success}
+import scala.concurrent.Future
 
 object ComputationClient extends App {
 
@@ -50,9 +52,6 @@ object ComputationClient extends App {
       log.info(s"Resolved assembly at ${httpLoc.uri}")
       sendCommand(httpLoc)
 
-    case Success(Some(other)) =>
-      log.warn(s"Resolved a non-HTTP location: $other")
-
     case Success(None) =>
       log.error("Assembly not found in Location Service")
 
@@ -68,20 +67,39 @@ object ComputationClient extends App {
 
     val assembly: CommandService = CommandServiceFactory.make(loc)(system)
 
-    val axisKey: Key[Char]  = KeyType.CharKey.make("axis")
-    val countsKey: Key[Int] = KeyType.IntKey.make("counts")
+    val stepCountKey = KeyType.IntKey.make("stepCount")
+    val stepSizeKey  = KeyType.FloatKey.make("stepSizeMicrons")
 
     val setup =
-      Setup(Prefix("csw.test.client"), CommandName("setRelTarget"), None)
-        .add(axisKey.set('A'))
-        .add(countsKey.set(2))
+      Setup(
+        Prefix("aps.computationprototypeassembly"),
+        CommandName("colorStep"),
+        None
+      )
+        .add(stepCountKey.set(11))
+        .add(stepSizeKey.set(20.0f))
 
-    assembly.submit(setup).onComplete {
-      case Success(resp) =>
-        log.info(s"✅ Response received from assembly: $resp")
-
-      case Failure(ex) =>
-        log.error("Command submission failed", Map.empty, ex)
+    val immediateCommandF: Future[SubmitResponse] = for {
+      response <- assembly.submitAndWait(setup)
+    } yield response match {
+      case completed: Completed =>
+        log.info(s"Command completed successfully: $completed")
+        completed
+      case started: Started =>
+        log.info(s"Command started: $started")
+        started
+      case invalid: Invalid =>
+        log.error(s"Command invalid: $invalid")
+        invalid
+      case error: Error =>
+        log.error(s"Command failed: $error")
+        error
+      case cancelled: Cancelled =>
+        log.warn(s"Command cancelled: $cancelled")
+        cancelled
+      case locked: Locked =>
+        log.warn(s"Command locked: $locked")
+        locked
     }
   }
 }
