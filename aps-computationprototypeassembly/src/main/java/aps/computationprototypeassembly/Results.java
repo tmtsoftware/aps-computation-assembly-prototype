@@ -4,9 +4,11 @@ public class Results {
 
     float[] centroidOffsetsX = new float[36];
     float[] centroidOffsetsY = new float[36];
-    float[] desiredActDeltas;
     float[] xOffsetsOut;
     float[] yOffsetsOut;
+    float[][] tipTiltActs;
+    float[][] pistonActs;
+    float[][] desiredActDeltas;
 
 
     public Results() {

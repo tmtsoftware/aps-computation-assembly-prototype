@@ -63,6 +63,30 @@ object ComputationClient extends App {
   // Send command
   // ===============================
   private def sendCommand(loc: HttpLocation): Unit = {
+
+    def handleResponse(response: SubmitResponse): SubmitResponse = {
+      response match {
+        case completed: Completed =>
+          log.info(s"Command completed successfully: $completed")
+          completed
+        case started: Started =>
+          log.info(s"Command started: $started")
+          started
+        case invalid: Invalid =>
+          log.error(s"Command invalid: $invalid")
+          invalid
+        case error: Error =>
+          log.error(s"Command failed: $error")
+          error
+        case cancelled: Cancelled =>
+          log.warn(s"Command cancelled: $cancelled")
+          cancelled
+        case locked: Locked =>
+          log.warn(s"Command locked: $locked")
+          locked
+      }
+    }
+
     log.info(s"Sending command to ${loc.uri}")
 
     val assembly: CommandService = CommandServiceFactory.make(loc)(system)
@@ -84,28 +108,24 @@ object ComputationClient extends App {
       CommandName("ttOffsetsToActs"),
       None
     )
+    val decomposeActsSetup = Setup(
+      Prefix("aps.computationprototypeassembly"),
+      CommandName("decomposeActs"),
+      None
+    )
 
     val immediateCommandF: Future[SubmitResponse] = for {
-      response <- assembly.submitAndWait(ttSetup)
-    } yield response match {
-      case completed: Completed =>
-        log.info(s"Command completed successfully: $completed")
-        completed
-      case started: Started =>
-        log.info(s"Command started: $started")
-        started
-      case invalid: Invalid =>
-        log.error(s"Command invalid: $invalid")
-        invalid
-      case error: Error =>
-        log.error(s"Command failed: $error")
-        error
-      case cancelled: Cancelled =>
-        log.warn(s"Command cancelled: $cancelled")
-        cancelled
-      case locked: Locked =>
-        log.warn(s"Command locked: $locked")
-        locked
-    }
+      response1 <- assembly.submitAndWait(ttSetup)
+      handled1 = handleResponse(response1)
+
+      response2 <- handled1 match {
+        case _: Completed =>
+          assembly.submitAndWait(decomposeActsSetup)
+        case other =>
+          Future.successful(other)
+      }
+
+    } yield handleResponse(response2)
+
   }
 }

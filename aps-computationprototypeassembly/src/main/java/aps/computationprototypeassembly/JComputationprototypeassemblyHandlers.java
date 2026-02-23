@@ -78,8 +78,16 @@ public class JComputationprototypeassemblyHandlers extends JComponentHandlers {
             this.runId = runId;
         }
     }
+    private static final class ExecuteDecomposeActs implements WorkerCommand {
+        private final Id runId;
+        private ExecuteDecomposeActs(Id runId) {
+            this.runId = runId;
+        }
+    }
 
     private ActorRef<WorkerCommand> createWorkerActor() {
+        Configuration configuration = new Configuration();
+        Results results = new Results();
         return actorContext.spawn(
                 Behaviors.receiveMessage(msg -> {
 
@@ -88,7 +96,7 @@ public class JComputationprototypeassemblyHandlers extends JComponentHandlers {
                         log.info("Worker: Starting colorStep computation");
 
                         try {
-                            AlgorithmLibrary algorithmLibrary = new AlgorithmLibrary();
+                            AlgorithmLibrary algorithmLibrary = new AlgorithmLibrary(cswCtx);
 
                             double t1 = System.nanoTime();
                             float[][] colorsteps =
@@ -136,12 +144,37 @@ public class JComputationprototypeassemblyHandlers extends JComponentHandlers {
                         log.info("Worker: Starting ttOffsetsToActs computation");
 
                         try {
-                            AlgorithmLibrary algorithmLibrary = new AlgorithmLibrary();
-                            Configuration configuration = new Configuration();
-                            Results results = new Results();
+                            AlgorithmLibrary algorithmLibrary = new AlgorithmLibrary(cswCtx);
 
                             double t1 = System.nanoTime();
                             algorithmLibrary.ttOffsetsToActs(configuration, results);
+                            double t2 = System.nanoTime();
+
+                            Result result = new Result();
+
+                            CommandResponse.Completed response =
+                                    new CommandResponse.Completed(exec.runId, result);
+
+                            log.info("Worker: Computation finished in "
+                                    + (t2 - t1) / 1_000_000.0 + " ms");
+
+                            cswCtx.commandResponseManager().updateCommand(response);
+
+                        } catch (Exception e) {
+                            log.error("Worker error: " + e.getMessage());
+                            cswCtx.commandResponseManager()
+                                    .updateCommand(new CommandResponse.Error(exec.runId, e.getMessage()));
+                        }
+                    } else if (msg instanceof ExecuteDecomposeActs exec) {
+
+                        log.info("Worker: Starting decomposeActs computation");
+
+                        try {
+                            AlgorithmLibrary algorithmLibrary = new AlgorithmLibrary(cswCtx);
+
+
+                            double t1 = System.nanoTime();
+                            algorithmLibrary.decomposeActs(configuration, results);
                             double t2 = System.nanoTime();
 
                             Result result = new Result();
@@ -196,6 +229,9 @@ public class JComputationprototypeassemblyHandlers extends JComponentHandlers {
         if (commandName.equals("ttOffsetsToActs")) {
             return new CommandResponse.Accepted(runId);
         }
+        if (commandName.equals("decomposeActs")) {
+            return new CommandResponse.Accepted(runId);
+        }
 
         return new CommandResponse.Invalid(
                 runId,
@@ -243,6 +279,12 @@ public class JComputationprototypeassemblyHandlers extends JComponentHandlers {
             } else if (commandName.equals("ttOffsetsToActs")) {
 
                 workerActor.tell(new ExecuteTtOffsetsToActs(runId));
+
+                return new CommandResponse.Started(runId);
+
+            } else if (commandName.equals("decomposeActs")) {
+
+                workerActor.tell(new ExecuteDecomposeActs(runId));
 
                 return new CommandResponse.Started(runId);
             }
