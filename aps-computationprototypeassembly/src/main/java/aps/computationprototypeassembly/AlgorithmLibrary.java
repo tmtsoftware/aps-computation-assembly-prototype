@@ -1,10 +1,7 @@
 package aps.computationprototypeassembly;
 
-import csw.params.core.models.Semester;
-import csw.params.core.models.Semester;
 import org.tmt.aps.peas.lang.interop.JcolorStep;
 import org.tmt.aps.peas.lang.interop.RetVal;
-import org.tmt.aps.peas.lang.interop.JcalculateM2M1RayTrace;
 import org.tmt.aps.peas.lang.interop.JttOffsetsToActs;
 import org.tmt.aps.peas.lang.interop.JdecomposeActs;
 import csw.framework.models.JCswContext;
@@ -17,7 +14,7 @@ public class AlgorithmLibrary {
     public AlgorithmLibrary(JCswContext cswCtx) {
         this.log = cswCtx.loggerFactory().getLogger(getClass());
     }
-    public float[][] colorStep(int stepCount, float stepSizeNm) throws Exception {
+    public void colorStep(int stepCount, float stepSizeNm, float[][] colorsteps) throws Exception {
 
         JcolorStep jcolorStep = new JcolorStep();
         RetVal retVal = new RetVal();
@@ -31,32 +28,32 @@ public class AlgorithmLibrary {
         if (retVal.getCode() > 0) {
             throw new Exception("colorStep calcuation error. " + retVal + ".  ");
         }
-
-        return colorSteps;
     }
 
-    public void ttOffsetsToActs(Configuration configuration, Results results) throws Exception {
+    // method call with formal parameter names
+    public void ttOffsetsToActs(float[] xActPos, float[] yActPos, float secPerPix,
+       float[] centroidOffsetsX, float[] centroidOffsetsY, int[] mirrorConfig, float[] xOffsetsOut, float[] yOffsetsOut,
+       float[][] desiredActDeltas) throws Exception {
 
         JttOffsetsToActs jttOffsetsToActs = new JttOffsetsToActs();
         RetVal retVal = new RetVal();
 
         double t1 = System.nanoTime();
 
-        float secperpix = configuration.secPerPix;
-        float[] x_act_pos = configuration.actuatorPositionsX;
-        float[] y_act_pos = configuration.actuatorPositionsY;
-
-        float[] x_offsets = results.centroidOffsetsX;
-        float[] y_offsets = results.centroidOffsetsY;
-        ;
-
-        int[] mirror_config = configuration.mirrorConfig;
+        // input vars (mostly just shifting from Algorithm Library Formal param names to Fortran names
+        float[] x_act_pos = xActPos;
+        float[] y_act_pos = yActPos;
+        float secperpix = secPerPix;
+        int[] mirror_config = mirrorConfig;
+        float[] x_offsets = centroidOffsetsX;
+        float[] y_offsets = centroidOffsetsY;
 
         // output arrays
-        float[] desired_act_deltas = new float[configuration.actuatorPositionsX.length];
-        float[] x_offsets_out = new float[results.centroidOffsetsX.length];
-        float[] y_offsets_out = new float[results.centroidOffsetsY.length];
+        float[] desired_act_deltas = new float[xActPos.length];  // not final output var, need to pre-allocate
+        float[] x_offsets_out = xOffsetsOut;  // pre-allocated
+        float[] y_offsets_out = yOffsetsOut;  // pre-allocated
 
+        // fortran call with slightly different parameters
         Object output[] = jttOffsetsToActs.jttOffsetsToActs(retVal, x_act_pos, y_act_pos, secperpix, x_offsets, y_offsets,
                 mirror_config, x_offsets_out, y_offsets_out, desired_act_deltas);
 
@@ -64,48 +61,41 @@ public class AlgorithmLibrary {
             throw new Exception("\"Tip/Tilt Offsets to Actuator Calculation Error. " + retVal + ".  ");
         }
 
-        results.xOffsetsOut = x_offsets_out;
-        results.yOffsetsOut = y_offsets_out;
+        // move fortran output params to method formal params
+        xOffsetsOut = x_offsets_out;
+        yOffsetsOut = y_offsets_out;
 
-        // store fi_param values
-        float[][] desiredActDeltas = new float[configuration.actuatorPositionsX.length/3][3];
-        for (int i = 0; i<configuration.actuatorPositionsX.length/3; i++) {
+        // store fi_param values into preallocated desiredActDeltas
+        for (int i = 0; i<xActPos.length/3; i++) {
             desiredActDeltas[i][0] = desired_act_deltas[i*3 + 0];
             desiredActDeltas[i][1] = desired_act_deltas[i*3 + 1];
             desiredActDeltas[i][2] = desired_act_deltas[i*3 + 2];
         }
 
-        results.desiredActDeltas = desiredActDeltas;
-
     }
 
-    public void decomposeActs(Configuration configuration, Results results) throws Exception {
+    public void decomposeActs(float[][] desiredActDeltas, float[] tipTiltActs, float[] pistonActs) throws Exception {
 
         log.info("in decomposeActs");
         JdecomposeActs jdecomposeActs = new JdecomposeActs();
         RetVal retVal = new RetVal();
-        log.info("decomposeActs::flatten2dArray");
-        float[] actPos = flatten2dArray(results.desiredActDeltas, 1);
+
+        float[] actPos = flatten2dArray(desiredActDeltas, 1);
 
         // output arrays
-        log.info("decomposeActs::act_tt allocation");
-        float[] act_tt = new float[actPos.length];
-        log.info("decomposeActs::act_tt allocation");
-        float[] act_p = new float[actPos.length];
+
+        float[] act_tt = tipTiltActs;
+
+        float[] act_p = pistonActs;
 
 
-        log.info("decomposeActs::calling Fortran");
+
         Object output[] = jdecomposeActs.jdecomposeActs(retVal, actPos, act_tt, act_p);
 
         if (retVal.getCode() > 0) {
             throw new Exception("Decompose Actuators Calculation Error:  " + retVal);
         }
 
-        // store _param values
-
-
-        results.tipTiltActs = expandTo2dArray(act_tt, 3);
-        results.pistonActs = expandTo2dArray(act_p, 3);
     }
 
 

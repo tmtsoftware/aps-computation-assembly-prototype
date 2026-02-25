@@ -1,22 +1,16 @@
 package aps.computationprototypeassembly;
 
 import java.util.*;
-
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.Map;
 public class Configuration {
-
-
-    float secPerPix;
-    float[] actuatorPositionsX;
-    float[] actuatorPositionsY;
-    int[] mirrorConfig;
-
-
+    private static final Configuration CONFIGURATION = new Configuration();
+    private final Map<String, Object> data = new ConcurrentHashMap<>();
 
     public Configuration() {
 
-        secPerPix = (float)(12825.0 * 13E-6);
-
-        mirrorConfig = new int[36];
+        float secPerPix = (float)(12825.0 * 13E-6);
+        int[] mirrorConfig = new int[36];
         for (int i=0; i<36; i++) {
             mirrorConfig[i] = 1;
         }
@@ -131,8 +125,21 @@ public class Configuration {
                        "'942555, 3661876,' ||" +
                        "'1757445, 3661876' ||";
         SplitArray xyArray = splitToFloatArrays(actsString);
-        actuatorPositionsX = xyArray.xArray;
-        actuatorPositionsY = xyArray.yArray;
+        float[] actuatorPositionsX = xyArray.xArray;
+        float[] actuatorPositionsY = xyArray.yArray;
+
+        data.put("secPerPix", secPerPix);
+        data.put("actuatorPositionsX", actuatorPositionsX);
+        data.put("actuatorPositionsY", actuatorPositionsY);
+        data.put("mirrorConfig", mirrorConfig);
+    }
+
+    public static Configuration getInstance() {
+        return CONFIGURATION;
+    }
+
+    public Object get(String key) {
+        return data.get(key);
     }
 
     private class SplitArray {
@@ -142,41 +149,41 @@ public class Configuration {
 
     public SplitArray splitToFloatArrays(String input) {
 
-            String cleaned = input
-                    .replace("'", "")
-                    .replace("||", "")
-                    .trim();
+        String cleaned = input
+                .replace("'", "")
+                .replace("||", "")
+                .trim();
 
-            String[] tokens = cleaned.split(",");
+        String[] tokens = cleaned.split(",");
 
-            List<Float> xList = new ArrayList<>();
-            List<Float> yList = new ArrayList<>();
+        List<Float> xList = new ArrayList<>();
+        List<Float> yList = new ArrayList<>();
 
-            for (int i = 0; i < tokens.length - 1; i += 2) {
-                String xVal = tokens[i].trim();
-                String yVal = tokens[i + 1].trim();
+        for (int i = 0; i < tokens.length - 1; i += 2) {
+            String xVal = tokens[i].trim();
+            String yVal = tokens[i + 1].trim();
 
-                if (!xVal.isEmpty() && !yVal.isEmpty()) {
-                    xList.add(Float.parseFloat(xVal));
-                    yList.add(Float.parseFloat(yVal));
-                }
+            if (!xVal.isEmpty() && !yVal.isEmpty()) {
+                xList.add(Float.parseFloat(xVal));
+                yList.add(Float.parseFloat(yVal));
             }
-
-            float[] x = new float[xList.size()];
-            float[] y = new float[yList.size()];
-
-            for (int i = 0; i < xList.size(); i++) {
-                x[i] = xList.get(i);
-                y[i] = yList.get(i);
-            }
-
-            SplitArray splitArray = new SplitArray();
-            splitArray.xArray = x;
-            splitArray.yArray = y;
-
-            return splitArray;
         }
 
+        float[] x = new float[xList.size()];
+        float[] y = new float[yList.size()];
+
+        for (int i = 0; i < xList.size(); i++) {
+            x[i] = xList.get(i);
+            y[i] = yList.get(i);
+        }
+
+        SplitArray splitArray = new SplitArray();
+        splitArray.xArray = x;
+        splitArray.yArray = y;
+
+        return splitArray;
     }
+
+}
 
 

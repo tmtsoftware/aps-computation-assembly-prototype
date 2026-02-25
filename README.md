@@ -1,7 +1,26 @@
 # computationPrototype
 
-This project implements an HCD (Hardware Control Daemon) and an Assembly using
+## Overview
+This project implements an Assembly that wraps the APS Algorithm Library using
 TMT Common Software ([CSW](https://github.com/tmtsoftware/csw)) APIs.
+
+Commands are handled by worker actors that implement the WorkerCommand interface.  
+This prototype implements three commands: ExecuteColorStep, ExecuteTtOffsetsToActs and ExecuteDecomposeActs.
+Each is implemented as a worker that handles the named command.
+
+Fortran computations are called from the AlgorithmLibrary class, referenced within each WorkerCommand implementation class.
+
+Each WorkerCommand implementation contains metadata about the parameters passed to the Fortran function:
+* name - used to load and store values from Configuration or Result singletons
+* class
+* array shape or scalar indicator
+* source - configuration or a previous computation result
+* direction - input or output parameter
+
+The WorkerCommand implementation classes each prepare the arguments to the AlgorithmLibrary class function call that worker is responsible for, calls the function and stores all output variable to the Result singleton.
+
+### Next Steps
+Configuration singleton and Result singleton will be replaced by a prototype ProcedureDataService, and ultimately backed by a relational database.
 
 ## Subprojects
 
