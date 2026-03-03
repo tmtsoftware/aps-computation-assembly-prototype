@@ -6,7 +6,6 @@ import csw.params.core.models.Id;
 import aps.computationprototypeassembly.AlgorithmLibrary;
 import aps.computationprototypeassembly.Configuration;
 import aps.computationprototypeassembly.Results;
-import aps.computationprototypeassembly.metadata.ComputationParameter;
 import aps.computationprototypeassembly.metadata.ComputationUtils;
 import java.util.List;
 
@@ -22,9 +21,9 @@ public class ExecuteTtOffsetsToActs implements WorkerCommand {
             new ComputationParameter("centroidOffsetsX", float.class, new int[]{36}, ComputationParameter.Source.RESULTS, ComputationParameter.Direction.INPUT),
             new ComputationParameter("centroidOffsetsY", float.class, new int[]{36}, ComputationParameter.Source.RESULTS, ComputationParameter.Direction.INPUT),
             new ComputationParameter("mirrorConfig", int.class, new int[]{36}, ComputationParameter.Source.CONFIGURATION, ComputationParameter.Direction.INPUT),
-            new ComputationParameter("xOffsetsOut", float.class, new int[]{36}, ComputationParameter.Source.RESULTS, ComputationParameter.Direction.OUTPUT),
-            new ComputationParameter("yOffsetsOut", float.class, new int[]{36}, ComputationParameter.Source.RESULTS, ComputationParameter.Direction.OUTPUT),
-            new ComputationParameter("desiredActDeltas", float.class, new int[]{36,3}, ComputationParameter.Source.RESULTS, ComputationParameter.Direction.OUTPUT)
+            new ComputationParameter("xOffsetsOut", float.class, new int[]{36}, ComputationParameter.Destination.RESULTS, ComputationParameter.Direction.OUTPUT),
+            new ComputationParameter("yOffsetsOut", float.class, new int[]{36}, ComputationParameter.Destination.RESULTS, ComputationParameter.Direction.OUTPUT),
+            new ComputationParameter("desiredActDeltas", float.class, new int[]{36,3}, ComputationParameter.Destination.RESULTS, ComputationParameter.Direction.OUTPUT)
     );
 
     public ExecuteTtOffsetsToActs(Id runId) {
@@ -73,7 +72,7 @@ public class ExecuteTtOffsetsToActs implements WorkerCommand {
         for (int i = 0; i < metadata.size(); i++) {
             ComputationParameter p = metadata.get(i);
             if (p.direction == ComputationParameter.Direction.OUTPUT) {
-                if (p.source == ComputationParameter.Source.RESULTS) {
+                if (p.destination == ComputationParameter.Destination.RESULTS) {
                     results.set(p.name, argsForFortran[i]);
                 } else {
                     throw new Exception("output should be in RESULTS metadata");

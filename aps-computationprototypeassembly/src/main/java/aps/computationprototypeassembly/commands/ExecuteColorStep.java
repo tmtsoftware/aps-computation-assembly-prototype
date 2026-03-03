@@ -4,7 +4,10 @@ import csw.params.commands.Result;
 import csw.params.core.models.Id;
 import csw.params.core.models.ArrayData;
 import csw.params.core.generics.Parameter;
+import csw.params.commands.ControlCommand;
+import csw.params.commands.Setup;
 import csw.params.javadsl.JKeyType;
+import csw.params.core.generics.Key;
 import aps.computationprototypeassembly.AlgorithmLibrary;
 import aps.computationprototypeassembly.Configuration;
 import aps.computationprototypeassembly.Results;
@@ -16,19 +19,28 @@ import java.util.List;
 public class ExecuteColorStep implements WorkerCommand {
 
     private final Id runId;
-    private final int stepCount;
-    private final float stepSizeNm;
+    private int stepCount;
+    private float stepSizeNm;
 
     private static final List<ComputationParameter> metadata = List.of(
         new ComputationParameter("stepCount", int.class, new int[]{}, ComputationParameter.Source.CONFIGURATION, ComputationParameter.Direction.INPUT),
         new ComputationParameter("stepSizeNm", float.class, new int[]{}, ComputationParameter.Source.CONFIGURATION, ComputationParameter.Direction.INPUT),
-        new ComputationParameter("colorSteps", float.class, new int[]{0,0}, ComputationParameter.Source.RESULTS, ComputationParameter.Direction.OUTPUT)
+        new ComputationParameter("colorSteps", float.class, new int[]{0,0}, ComputationParameter.Destination.RESULTS, ComputationParameter.Direction.OUTPUT)
     );
 
-    public ExecuteColorStep(Id runId, int stepCount, float stepSizeNm) {
+    public ExecuteColorStep(Id runId, ControlCommand controlCommand) {
         this.runId = runId;
-        this.stepCount = stepCount;
-        this.stepSizeNm = stepSizeNm;
+
+        Setup setup = (Setup)controlCommand;
+
+        Key<Integer> stepCountKey = JKeyType.IntKey().make("stepCount");
+        Key<Float> stepSizeKey = JKeyType.FloatKey().make("stepSizeMicrons");
+
+        var stepCountParam = setup.jGet(stepCountKey);
+        var stepSizeParam = setup.jGet(stepSizeKey);
+
+        this.stepCount = stepCountParam.get().head();
+        this.stepSizeNm = stepSizeParam.get().head() * 1000.0f;
     }
 
     @Override
@@ -66,7 +78,7 @@ public class ExecuteColorStep implements WorkerCommand {
         for (int i = 0; i < metadata.size(); i++) {
             ComputationParameter p = metadata.get(i);
             if (p.direction == ComputationParameter.Direction.OUTPUT) {
-                if (p.source == ComputationParameter.Source.RESULTS) {
+                if (p.destination == ComputationParameter.Destination.RESULTS) {
                     results.set(p.name, argsForFortran[i]);
                 } else {
                     throw new Exception("output should be in RESULTS metadata");

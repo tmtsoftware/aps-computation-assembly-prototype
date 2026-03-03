@@ -17,8 +17,8 @@ public class ExecuteDecomposeActs implements WorkerCommand {
 
     private static final List<ComputationParameter> metadata = List.of(
             new ComputationParameter("desiredActDeltas", float.class, new int[]{36,3}, ComputationParameter.Source.RESULTS, ComputationParameter.Direction.INPUT),
-            new ComputationParameter("tipTiltActs", float.class, new int[]{108}, ComputationParameter.Source.RESULTS, ComputationParameter.Direction.OUTPUT),
-            new ComputationParameter("pistonActs", float.class, new int[]{108}, ComputationParameter.Source.RESULTS, ComputationParameter.Direction.OUTPUT)
+            new ComputationParameter("tipTiltActs", float.class, new int[]{108}, ComputationParameter.Destination.RESULTS, ComputationParameter.Direction.OUTPUT),
+            new ComputationParameter("pistonActs", float.class, new int[]{108}, ComputationParameter.Destination.RESULTS, ComputationParameter.Direction.OUTPUT)
     );
     public ExecuteDecomposeActs(Id runId) {
         this.runId = runId;
@@ -56,7 +56,7 @@ public class ExecuteDecomposeActs implements WorkerCommand {
         for (int i = 0; i < metadata.size(); i++) {
             ComputationParameter p = metadata.get(i);
             if (p.direction == ComputationParameter.Direction.OUTPUT) {
-                if (p.source == ComputationParameter.Source.RESULTS) {
+                if (p.destination == ComputationParameter.Destination.RESULTS) {
                     results.set(p.name, argsForFortran[i]);
                 } else {
                     throw new Exception("output should be in RESULTS metadata");

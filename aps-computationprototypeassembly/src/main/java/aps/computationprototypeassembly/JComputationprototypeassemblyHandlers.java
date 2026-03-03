@@ -2,7 +2,6 @@ package aps.computationprototypeassembly;
 
 import org.apache.pekko.actor.typed.ActorRef;
 import org.apache.pekko.actor.typed.javadsl.ActorContext;
-import org.apache.pekko.actor.typed.javadsl.Behaviors;
 
 import csw.command.client.messages.TopLevelActorMessage;
 import csw.framework.javadsl.JComponentHandlers;
@@ -106,23 +105,9 @@ public class JComputationprototypeassemblyHandlers extends JComponentHandlers {
         switch (commandName) {
 
             case "colorStep" -> {
-                Key<Integer> stepCountKey = JKeyType.IntKey().make("stepCount");
-                Key<Float> stepSizeKey = JKeyType.FloatKey().make("stepSizeMicrons");
 
-                var stepCountParam = setup.jGet(stepCountKey);
-                var stepSizeParam = setup.jGet(stepSizeKey);
 
-                if (stepCountParam.isEmpty() || stepSizeParam.isEmpty()) {
-                    return new CommandResponse.Error(runId, "Missing required parameters: stepCount or stepSizeMicrons");
-                }
-
-                int stepCount = stepCountParam.get().head();
-                float stepSizeNm = stepSizeParam.get().head() * 1000.0f;
-
-                log.info("Received parameters: stepCount=" + stepCount +
-                        ", stepSizeMicrons=" + stepSizeParam.get().head());
-
-                workerActor.tell(new ExecuteColorStep(runId, stepCount, stepSizeNm));
+                workerActor.tell(new ExecuteColorStep(runId, controlCommand));
 
                 return new CommandResponse.Started(runId);
             }

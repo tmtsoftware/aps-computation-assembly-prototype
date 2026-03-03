@@ -10,23 +10,37 @@ Each is implemented as a worker that handles the named command.
 
 Fortran computations are called from the AlgorithmLibrary class, referenced within each WorkerCommand implementation class.
 
+### WorkerCommands
+Worker command implementation classes are named using suffixes: NFC (no inupt arguments from command, only from services), AFC (all input and output arguments are supplied by command).  This allows the same function name to be called in different ways.
+
 Each WorkerCommand implementation contains metadata about the parameters passed to the Fortran function:
 * name - used to load and store values from Configuration or Result singletons
 * class
 * array shape or scalar indicator
-* source - configuration or a previous computation result
+* source - configuration, setup, constant, previous computation result (from service) or passed in command
 * direction - input or output parameter
 
 The WorkerCommand implementation classes each prepare the arguments to the AlgorithmLibrary class function call that worker is responsible for, calls the function and stores all output variable to the Result singleton.
 
+Constants are loaded during initialization.  Setup and configuration parameters are loaded using commands: loadSetup, loadConfig.
+
+#### ExecuteColorStepNFC
+A colorstep function command that gets inputs from configuration and outputs to procedure data service.
+#### ExecuteTtOffsetsToActsNFC
+Executes ttOffsetsToActs, using non-command parameter inputs and outputs
+#### ExecuteDecomposeActsNFC
+Executes decomposeActs using non-command parameter inputs including procedure data service to get inputs that were outputs of ttOffsetsToActs.
+#### 
+
 ### Next Steps
-Configuration singleton and Result singleton will be replaced by a prototype ProcedureDataService, and ultimately backed by a relational database.
+Result singleton will be replaced by a prototype ProcedureDataService, and ultimately backed by a relational database.
+Setup, Constant and Configuration singletons and loading commands.
 
 ## Subprojects
 
 * aps-computationprototypeassembly - an assembly that talks to the computationPrototype HCD
-* aps-computationprototypehcd - an HCD that talks to the computationPrototype hardware
-* aps-computationprototypedeploy - for starting/deploying HCDs and assemblies
+* aps-computationprototypehcd - not used
+* aps-computationprototypedeploy - for starting assembly
 
 ## Upgrading CSW Version
 
@@ -39,6 +53,9 @@ The build is based on sbt and depends on libraries generated from the
 [csw](https://github.com/tmtsoftware/csw) project.
 
 See [here](https://www.scala-sbt.org/1.0/docs/Setup.html) for instructions on installing sbt.
+
+
+
 
 ## CSW Prerequisites for running Components
 

@@ -1,31 +1,28 @@
 package aps.computationclient
 
 import java.net.InetAddress
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior, SpawnProtocol}
-import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorSystem, SpawnProtocol}
 import org.apache.pekko.util.Timeout
 import csw.command.api.scaladsl.CommandService
 import csw.command.client.CommandServiceFactory
+import csw.params.commands.CommandResponse._
+import csw.params.commands.{Setup, CommandName}
+import csw.params.core.generics.KeyType
+import csw.prefix.models.Prefix
+import csw.location.api.models.{ComponentId, HttpLocation, TypedConnection}
 import csw.location.api.models.ComponentType.Assembly
-import csw.location.api.models.{ComponentId, Connection, HttpLocation, LocationRemoved, LocationUpdated, TrackingEvent}
+import csw.location.api.models.Connection.HttpConnection
 import csw.location.client.scaladsl.HttpLocationServiceFactory
 import csw.logging.client.scaladsl.{GenericLoggerFactory, LoggingSystemFactory}
-import csw.params.commands.{CommandName, CommandResponse, ControlCommand, Setup}
-import csw.params.core.generics.{Key, KeyType}
-import csw.prefix.models.Prefix
-import csw.location.api.models.Connection.HttpConnection
-import csw.params.commands.CommandResponse.{Cancelled, Completed, Invalid, Locked, Started, SubmitResponse, Error}
 
 import scala.concurrent.duration._
-import scala.concurrent.ExecutionContextExecutor
-import scala.util.{Failure, Success}
-import scala.concurrent.Future
+import scala.concurrent.{Await, ExecutionContextExecutor, Future}
 
 object ComputationClient extends App {
 
-  // ===============================
+  // ----------------------------
   // Actor system & logging
-  // ===============================
+  // ----------------------------
   implicit val system: ActorSystem[SpawnProtocol.Command] =
     ActorSystem(SpawnProtocol(), "ComputationClient")
   implicit val ec: ExecutionContextExecutor = system.executionContext
@@ -34,98 +31,76 @@ object ComputationClient extends App {
   val host = InetAddress.getLocalHost.getHostName
   LoggingSystemFactory.start("ComputationClientApp", "0.1", host, system)
   val log = GenericLoggerFactory.getLogger
-
   log.info("Starting ComputationClient")
 
-  // ===============================
+  // ----------------------------
   // Location Service client
-  // ===============================
-  val locationService = HttpLocationServiceFactory.makeLocalClient
+  // ----------------------------
+  val locationService                           = HttpLocationServiceFactory.makeLocalClient
+  val assemblyId                                = ComponentId(Prefix("APS.computationPrototypeAssembly"), Assembly)
+  val connection: TypedConnection[HttpLocation] = HttpConnection(assemblyId)
 
-  val assemblyId = ComponentId(Prefix("APS.computationPrototypeAssembly"), Assembly)
+  // Blocking assembly resolution
+  val assembly: CommandService = resolveAssemblyBlocking()
 
-  val connection = HttpConnection(assemblyId)
+  // ----------------------------
+  // Pre-canned commands
+  // ----------------------------
+  val setup = Setup(Prefix("aps.computationprototypeassembly"), CommandName("colorStep"), None)
+    .add(KeyType.IntKey.make("stepCount").set(11))
+    .add(KeyType.FloatKey.make("stepSizeMicrons").set(20.0f))
 
-  // Resolve the assembly
-  locationService.resolve(connection, 5.seconds).onComplete {
-    case Success(Some(httpLoc: HttpLocation)) =>
-      log.info(s"Resolved assembly at ${httpLoc.uri}")
-      sendCommand(httpLoc)
+  val ttSetup            = Setup(Prefix("aps.computationprototypeassembly"), CommandName("ttOffsetsToActs"), None)
+  val decomposeActsSetup = Setup(Prefix("aps.computationprototypeassembly"), CommandName("decomposeActs"), None)
 
-    case Success(None) =>
-      log.error("Assembly not found in Location Service")
+  val commandSequence: Seq[(String, Setup)] = Seq(
+    "colorStep"       -> setup,
+    "ttOffsetsToActs" -> ttSetup,
+    "decomposeActs"   -> decomposeActsSetup
+  )
 
-    case Failure(ex) =>
-      log.error("Failed to resolve assembly", Map.empty, ex)
+  // ----------------------------
+  // Submit commands sequentially
+  // ----------------------------
+  commandSequence.foreach { case (name, command) =>
+    log.info(s"Submitting command: $name")
+
+    try {
+      val responseFuture: Future[SubmitResponse] = assembly.submitAndWait(command)
+      val response: SubmitResponse               = Await.result(responseFuture, 30.seconds)
+
+      response match {
+        case c: Completed   => log.info(s"Completed: $c")
+        case i: Invalid     => log.error(s"Invalid: $i")
+        case e: Error       => log.error(s"Error: $e")
+        case cxl: Cancelled => log.warn(s"Cancelled: $cxl")
+        case l: Locked      => log.warn(s"Locked: $l")
+      }
+
+    }
+    catch {
+      case ex: Exception =>
+        log.error(s"Failed to submit command $name", Map.empty, ex)
+    }
   }
 
-  // ===============================
-  // Send command
-  // ===============================
-  private def sendCommand(loc: HttpLocation): Unit = {
+  log.info("All commands submitted sequentially. Terminating client.")
+  system.terminate()
 
-    def handleResponse(response: SubmitResponse): SubmitResponse = {
-      response match {
-        case completed: Completed =>
-          log.info(s"Command completed successfully: $completed")
-          completed
-        case started: Started =>
-          log.info(s"Command started: $started")
-          started
-        case invalid: Invalid =>
-          log.error(s"Command invalid: $invalid")
-          invalid
-        case error: Error =>
-          log.error(s"Command failed: $error")
-          error
-        case cancelled: Cancelled =>
-          log.warn(s"Command cancelled: $cancelled")
-          cancelled
-        case locked: Locked =>
-          log.warn(s"Command locked: $locked")
-          locked
-      }
+  // ----------------------------
+  // Helpers
+  // ----------------------------
+  private def resolveAssemblyBlocking(): CommandService = {
+    val locOptFuture = locationService.resolve(connection, 5.seconds)
+    val locOpt       = Await.result(locOptFuture, 5.seconds)
+
+    val loc = locOpt.getOrElse {
+      log.error("Assembly not found in Location Service")
+      system.terminate()
+      sys.exit(1)
     }
 
-    log.info(s"Sending command to ${loc.uri}")
-
-    val assembly: CommandService = CommandServiceFactory.make(loc)(system)
-
-    val stepCountKey = KeyType.IntKey.make("stepCount")
-    val stepSizeKey  = KeyType.FloatKey.make("stepSizeMicrons")
-
-    val setup =
-      Setup(
-        Prefix("aps.computationprototypeassembly"),
-        CommandName("colorStep"),
-        None
-      )
-        .add(stepCountKey.set(11))
-        .add(stepSizeKey.set(20.0f))
-
-    val ttSetup = Setup(
-      Prefix("aps.computationprototypeassembly"),
-      CommandName("ttOffsetsToActs"),
-      None
-    )
-    val decomposeActsSetup = Setup(
-      Prefix("aps.computationprototypeassembly"),
-      CommandName("decomposeActs"),
-      None
-    )
-
-    val immediateCommandF: Future[SubmitResponse] = for {
-      response1 <- assembly.submitAndWait(ttSetup)
-      handled1 = handleResponse(response1)
-
-      response2 <- handled1 match {
-        case _: Completed =>
-          assembly.submitAndWait(decomposeActsSetup)
-        case other =>
-          Future.successful(other)
-      }
-
-    } yield handleResponse(response2)
-
+    log.info(s"Resolved assembly at ${loc.uri}")
+    CommandServiceFactory.make(loc)
   }
 }
