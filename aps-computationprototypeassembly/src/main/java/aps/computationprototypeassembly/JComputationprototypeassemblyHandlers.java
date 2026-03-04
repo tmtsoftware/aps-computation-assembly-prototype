@@ -113,12 +113,12 @@ public class JComputationprototypeassemblyHandlers extends JComponentHandlers {
             }
 
             case "ttOffsetsToActs" -> {
-                workerActor.tell(new ExecuteTtOffsetsToActs(runId));
+                workerActor.tell(new ExecuteTtOffsetsToActs(runId, controlCommand));
                 return new CommandResponse.Started(runId);
             }
 
             case "decomposeActs" -> {
-                workerActor.tell(new ExecuteDecomposeActs(runId));
+                workerActor.tell(new ExecuteDecomposeActs(runId, controlCommand));
                 return new CommandResponse.Started(runId);
             }
 

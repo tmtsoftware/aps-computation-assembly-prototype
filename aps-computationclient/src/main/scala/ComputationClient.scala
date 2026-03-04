@@ -46,12 +46,19 @@ object ComputationClient extends App {
   // ----------------------------
   // Pre-canned commands
   // ----------------------------
+  // color step: override metadata to force our own input values
   val setup = Setup(Prefix("aps.computationprototypeassembly"), CommandName("colorStep"), None)
     .add(KeyType.IntKey.make("stepCount").set(11))
     .add(KeyType.FloatKey.make("stepSizeNm").set(12.6f))
 
-  val ttSetup            = Setup(Prefix("aps.computationprototypeassembly"), CommandName("ttOffsetsToActs"), None)
+  // override input values: source = Result to be contexted to imaginary "centroidOffsets" function
+  val ttSetup = Setup(Prefix("aps.computationprototypeassembly"), CommandName("ttOffsetsToActs"), None)
+    .add(KeyType.StringKey.make("centroidOffsetsX").set("centroidOffsets.centroidOffsetsX"))
+    .add(KeyType.StringKey.make("centroidOffsetsY").set("centroidOffsets.centroidOffsetsY"))
+
+  // override input values: source = Result to be contexted to ttOffsetsToActs
   val decomposeActsSetup = Setup(Prefix("aps.computationprototypeassembly"), CommandName("decomposeActs"), None)
+    .add(KeyType.StringKey.make("desiredActDeltas").set("ttOffsetsToActs.desiredActDeltas"))
 
   val commandSequence: Seq[(String, Setup)] = Seq(
     "colorStep"       -> setup,

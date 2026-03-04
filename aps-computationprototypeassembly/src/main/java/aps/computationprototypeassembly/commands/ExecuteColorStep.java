@@ -27,7 +27,6 @@ public class ExecuteColorStep implements WorkerCommand {
         new ComputationParameter("stepSizeNm", float.class, new int[]{}, ComputationParameter.Source.CONFIGURATION, ComputationParameter.Direction.INPUT),
         new ComputationParameter("colorSteps", float.class, new int[]{12,3}, ComputationParameter.Destination.RESULTS, ComputationParameter.Direction.OUTPUT)
     );
-    private Setup setup1;
 
     public ExecuteColorStep(Id runId, ControlCommand controlCommand) {
         this.runId = runId;
@@ -89,12 +88,13 @@ public class ExecuteColorStep implements WorkerCommand {
 
         System.out.println("argsForFortran[2] = " + ((float[][]) argsForFortran[2])[4][1]);
 
-        // Populate outputs into Results or Configuration if needed
+        // Populate outputs into Results if needed
         for (int i = 0; i < metadata.size(); i++) {
             ComputationParameter p = metadata.get(i);
             if (p.direction == ComputationParameter.Direction.OUTPUT) {
                 if (p.destination == ComputationParameter.Destination.RESULTS) {
-                    results.set(p.name, argsForFortran[i]);
+                    String key = setup.commandName().name() + "." + p.name;
+                    results.set(key, argsForFortran[i]);
                 } else {
                     throw new Exception("output should be in RESULTS metadata");
                 }
@@ -114,15 +114,23 @@ public class ExecuteColorStep implements WorkerCommand {
     private Optional<?> extractFromSetup(ComputationParameter p) {
 
         try {
+            // Metadata-driven types
             if (p.type == int.class) {
                 Key<Integer> key = JKeyType.IntKey().make(p.name);
-                return setup.jGet(key).map(param -> param.head());
+                Optional<?> result = setup.jGet(key).map(param -> param.head());
+                if (result.isPresent()) return result;
             }
 
             if (p.type == float.class) {
                 Key<Float> key = JKeyType.FloatKey().make(p.name);
-                return setup.jGet(key).map(param -> param.head());
+                Optional<?> result = setup.jGet(key).map(param -> param.head());
+                if (result.isPresent()) return result;
             }
+
+            // 🔹 NEW: fallback to String if present in command
+            Key<String> stringKey = JKeyType.StringKey().make(p.name);
+            Optional<?> stringResult = setup.jGet(stringKey).map(param -> param.head());
+            if (stringResult.isPresent()) return stringResult;
 
         } catch (Exception ignored) {
         }

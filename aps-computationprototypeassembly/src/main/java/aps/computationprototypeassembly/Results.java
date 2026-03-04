@@ -18,8 +18,8 @@ public class Results {
                 -1.913f, -2.428f, -1.720f, -1.569f, -0.760f, -1.677f, 1.239f, 3.146f, 3.277f, 2.767f, 2.677f, 1.470f, -0.154f,
                 -1.825f, -2.638f, 3.006f, -9.161f, -2.118f, -2.004f, 0.162f, -2.130f, -0.984f, 3.866f, 1.741f, 2.723f};
 
-        data.put("centroidOffsetsX", centroidOffsetsX);
-        data.put("centroidOffsetsY", centroidOffsetsY);
+        data.put("centroidOffsets.centroidOffsetsX", centroidOffsetsX);
+        data.put("centroidOffsets.centroidOffsetsY", centroidOffsetsY);
     }
     public static Results getInstance() {
         return INSTANCE;
