@@ -15,32 +15,27 @@ import aps.computationprototypeassembly.metadata.ComputationParameter;
 import aps.computationprototypeassembly.metadata.ComputationUtils;
 
 import java.util.List;
+import java.util.Optional;
 
 public class ExecuteColorStep implements WorkerCommand {
 
     private final Id runId;
-    private int stepCount;
-    private float stepSizeNm;
+    private Setup setup;
 
-    private static final List<ComputationParameter> metadata = List.of(
+    private static List<ComputationParameter> metadata = List.of(
         new ComputationParameter("stepCount", int.class, new int[]{}, ComputationParameter.Source.CONFIGURATION, ComputationParameter.Direction.INPUT),
         new ComputationParameter("stepSizeNm", float.class, new int[]{}, ComputationParameter.Source.CONFIGURATION, ComputationParameter.Direction.INPUT),
-        new ComputationParameter("colorSteps", float.class, new int[]{0,0}, ComputationParameter.Destination.RESULTS, ComputationParameter.Direction.OUTPUT)
+        new ComputationParameter("colorSteps", float.class, new int[]{12,3}, ComputationParameter.Destination.RESULTS, ComputationParameter.Direction.OUTPUT)
     );
+    private Setup setup1;
 
     public ExecuteColorStep(Id runId, ControlCommand controlCommand) {
         this.runId = runId;
-
-        Setup setup = (Setup)controlCommand;
-
-        Key<Integer> stepCountKey = JKeyType.IntKey().make("stepCount");
-        Key<Float> stepSizeKey = JKeyType.FloatKey().make("stepSizeMicrons");
-
-        var stepCountParam = setup.jGet(stepCountKey);
-        var stepSizeParam = setup.jGet(stepSizeKey);
-
-        this.stepCount = stepCountParam.get().head();
-        this.stepSizeNm = stepSizeParam.get().head() * 1000.0f;
+        setup = (Setup)controlCommand;
+        Optional<?> setupValue = extractFromSetup(metadata.get(0));
+        int stepCount = (int)setupValue.get();
+        // set the size of the output array which is based on inputs
+        metadata.get(2).dimensions = new int[]{stepCount+1, 3};
     }
 
     @Override
@@ -61,18 +56,38 @@ public class ExecuteColorStep implements WorkerCommand {
             ComputationParameter p = metadata.get(i);
             if (p.direction == ComputationParameter.Direction.INPUT) {
                 // Read input from the appropriate source
-                argsForFortran[i] = p.source == ComputationParameter.Source.CONFIGURATION
-                        ? config.get(p.name)
-                        : results.get(p.name);
+                // Add logic to see if argument name is present in Setup command, and if so, override argsForFortran value with the one from the command
+                Object value = null;
+
+                // Try to override with Setup value if present
+                Optional<?> setupValue = extractFromSetup(p);
+
+                if (setupValue.isPresent()) {
+                    value = setupValue.get();
+                } else {
+                    // Fallback to original source
+                    value = (p.source == ComputationParameter.Source.CONFIGURATION)
+                            ? config.get(p.name)
+                            : results.get(p.name);
+                }
+
+                argsForFortran[i] = value;
+
             } else {
                 // Allocate output container of the correct type and shape
                 argsForFortran[i] = ComputationUtils.allocateArray(p.type, p.dimensions);
             }
         }
 
+        System.out.println("argsForFortran[0] = " + argsForFortran[0]);
+        System.out.println("argsForFortran[1] = " + argsForFortran[1]);
+        System.out.println("argsForFortran[2] = " + ((float[][]) argsForFortran[2]));
+
         library.colorStep((int) argsForFortran[0],
             (float) argsForFortran[1],
             (float[][]) argsForFortran[2]);
+
+        System.out.println("argsForFortran[2] = " + ((float[][]) argsForFortran[2])[4][1]);
 
         // Populate outputs into Results or Configuration if needed
         for (int i = 0; i < metadata.size(); i++) {
@@ -91,4 +106,28 @@ public class ExecuteColorStep implements WorkerCommand {
 
         return new Result();
     }
+
+
+    // -----------------------------------------
+    // Helper: Extract parameter from Setup
+    // -----------------------------------------
+    private Optional<?> extractFromSetup(ComputationParameter p) {
+
+        try {
+            if (p.type == int.class) {
+                Key<Integer> key = JKeyType.IntKey().make(p.name);
+                return setup.jGet(key).map(param -> param.head());
+            }
+
+            if (p.type == float.class) {
+                Key<Float> key = JKeyType.FloatKey().make(p.name);
+                return setup.jGet(key).map(param -> param.head());
+            }
+
+        } catch (Exception ignored) {
+        }
+
+        return Optional.empty();
+    }
+
 }

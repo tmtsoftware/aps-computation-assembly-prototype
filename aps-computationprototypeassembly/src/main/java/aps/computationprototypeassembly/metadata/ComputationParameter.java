@@ -8,7 +8,7 @@ public class ComputationParameter {
 
     public final String name;          // formal Fortran name
     public final Class<?> type;        // int, float, float[], etc.
-    public final int[] dimensions;     // scalar = {}, 1D = {n}, 2D = {n,m}
+    public int[] dimensions;     // scalar = {}, 1D = {n}, 2D = {n,m}
     public final Source source;        // where to read input from
     public final Destination destination;        // where to read input from
     public final Direction direction;  // INPUT or OUTPUT

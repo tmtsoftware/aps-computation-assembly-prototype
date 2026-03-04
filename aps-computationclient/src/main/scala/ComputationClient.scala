@@ -48,7 +48,7 @@ object ComputationClient extends App {
   // ----------------------------
   val setup = Setup(Prefix("aps.computationprototypeassembly"), CommandName("colorStep"), None)
     .add(KeyType.IntKey.make("stepCount").set(11))
-    .add(KeyType.FloatKey.make("stepSizeMicrons").set(20.0f))
+    .add(KeyType.FloatKey.make("stepSizeNm").set(12.6f))
 
   val ttSetup            = Setup(Prefix("aps.computationprototypeassembly"), CommandName("ttOffsetsToActs"), None)
   val decomposeActsSetup = Setup(Prefix("aps.computationprototypeassembly"), CommandName("decomposeActs"), None)

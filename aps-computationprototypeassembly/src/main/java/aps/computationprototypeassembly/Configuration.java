@@ -1,5 +1,7 @@
 package aps.computationprototypeassembly;
 
+import aps.computationprototypeassembly.metadata.ComputationParameter;
+
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
@@ -8,6 +10,9 @@ public class Configuration {
     private final Map<String, Object> data = new ConcurrentHashMap<>();
 
     public Configuration() {
+
+        float stepCount = 9;
+        float stepSizeNm = 10;
 
         float secPerPix = (float)(12825.0 * 13E-6);
         int[] mirrorConfig = new int[36];
@@ -127,6 +132,9 @@ public class Configuration {
         SplitArray xyArray = splitToFloatArrays(actsString);
         float[] actuatorPositionsX = xyArray.xArray;
         float[] actuatorPositionsY = xyArray.yArray;
+
+        data.put("stepCount", stepCount);
+        data.put("stepSizeNm", stepSizeNm);
 
         data.put("secPerPix", secPerPix);
         data.put("actuatorPositionsX", actuatorPositionsX);

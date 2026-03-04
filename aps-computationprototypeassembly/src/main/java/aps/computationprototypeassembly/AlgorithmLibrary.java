@@ -13,19 +13,32 @@ public class AlgorithmLibrary {
     public AlgorithmLibrary(JCswContext cswCtx) {
         this.log = cswCtx.loggerFactory().getLogger(getClass());
     }
-    public void colorStep(int stepCount, float stepSizeNm, float[][] colorsteps) throws Exception {
+    public void colorStep(int stepCount, float stepSizeNm, float[][] colorSteps) throws Exception {
 
         JcolorStep jcolorStep = new JcolorStep();
         RetVal retVal = new RetVal();
 
-        float[][] colorSteps = new float[stepCount + 1][3];
+        int arg1 = 5;
+        float arg2 = 324.3f;
+        float[][] arg3 = new float[arg1+1][3];
 
-        double t1 = System.nanoTime();
+        Object[] result0 = jcolorStep.jcolorStep(retVal, arg1, arg2, arg3);
+
+        System.out.println("stepCount = " + arg1 + ", stepSizeNm = " + arg2 + ", colorSteps = ");
+        printMatrix(arg3);
 
         Object[] result = jcolorStep.jcolorStep(retVal, stepCount, stepSizeNm, colorSteps);
 
         if (retVal.getCode() > 0) {
             throw new Exception("colorStep calcuation error. " + retVal + ".  ");
+        }
+    }
+    public static void printMatrix(float[][] matrix) {
+        for (int i = 0; i < matrix.length; i++) {
+            for (int j = 0; j < matrix[i].length; j++) {
+                System.out.printf("%10.3f ", matrix[i][j]);
+            }
+            System.out.println();
         }
     }
 
