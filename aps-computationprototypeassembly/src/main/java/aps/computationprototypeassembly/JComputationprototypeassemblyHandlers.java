@@ -1,5 +1,8 @@
 package aps.computationprototypeassembly;
 
+import csw.config.client.javadsl.JConfigClientFactory;
+import csw.config.api.javadsl.IConfigClientService;
+
 import org.apache.pekko.actor.typed.ActorRef;
 import org.apache.pekko.actor.typed.javadsl.ActorContext;
 
@@ -15,6 +18,15 @@ import csw.params.javadsl.JKeyType;
 import csw.params.core.models.ArrayData;
 import csw.time.core.models.UTCTime;
 
+import csw.config.api.ConfigData;
+import com.typesafe.config.Config;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.List;
+import csw.config.models.ConfigFileInfo;
+
 import aps.computationprototypeassembly.worker.CommandWorker;
 import aps.computationprototypeassembly.commands.*;
 
@@ -25,6 +37,8 @@ public class JComputationprototypeassemblyHandlers extends JComponentHandlers {
     private final ActorContext<TopLevelActorMessage> actorContext;
     private final ActorRef<WorkerCommand> workerActor;
 
+    private IConfigClientService configClient;
+
     public JComputationprototypeassemblyHandlers(ActorContext<TopLevelActorMessage> ctx, JCswContext cswCtx) {
         super(ctx, cswCtx);
         this.cswCtx = cswCtx;
@@ -32,6 +46,9 @@ public class JComputationprototypeassemblyHandlers extends JComponentHandlers {
         this.actorContext = ctx;
 
         System.loadLibrary("peas");
+
+        configClient = cswCtx.configClientService();
+
 
         // Spawn the new CommandWorker actor
         this.workerActor = actorContext.spawn(
@@ -44,9 +61,42 @@ public class JComputationprototypeassemblyHandlers extends JComponentHandlers {
 
     @Override
     public void initialize() {
-        // Initialization logic if needed
-    }
+        IConfigClientService configClient = cswCtx.configClientService();
 
+        HoconReader hoconReader = new HoconReader();
+
+        String[] filenames = {
+                "APS_DB_FS_6_rectangular_array",
+                "APS_DB_FS_6_rings_global_xy_scaled",
+                "APS_DB_FS_6_rings_local_xy_unscaled",
+                "APS_DB_M1CS_modes",
+                "APS_DB_PH_2_periph_subaps_vs_segment",
+                "APS_DB_PH_params_2_subap",
+                "APS_DB_PH_triangles",
+                "APS_DB_PH_closure_triples",
+                "APS_DB_emult_sing_values",
+                "APS_DB_given_1_subaps_find_corres_2",
+                "APS_DB_given_2_subaps_find_corres_1",
+                "APS_DB_optimal_FI_freqs_8192_6_rings",
+                "APS_DB_ref_def_tmt_8192_FS_6",
+                "APS_DB_segment_colors",
+                "APS_DB_segment_sensor_numbers_2_subap"
+        };
+
+        for (String filename : filenames) {
+            Path filePath = Paths.get("tmt/aps/db/" + filename + ".conf");
+            try {
+                Optional<ConfigData> maybeConfigData = configClient.getActive(filePath).get();
+                Config config = maybeConfigData
+                        .orElseThrow(() -> new RuntimeException("Config file not found: " + filePath))
+                        .toJConfigObject(actorContext.getSystem())
+                        .get();
+                hoconReader.readFile(config, filename);
+            } catch (InterruptedException | ExecutionException e) {
+                throw new RuntimeException("Failed to load: " + filePath, e);
+            }
+        }
+    }
     @Override
     public void onShutdown() {
         // Cleanup logic if needed
