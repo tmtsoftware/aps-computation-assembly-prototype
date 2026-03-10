@@ -1,5 +1,6 @@
 package aps.computationprototypeassembly.commands;
 
+import aps.computationprototypeassembly.Constants;
 import aps.computationprototypeassembly.metadata.ComputationParameter;
 import csw.params.commands.Result;
 import csw.params.core.models.Id;
@@ -41,6 +42,7 @@ public class ExecuteDecomposeActs implements WorkerCommand {
 
         Results results = Results.getInstance();
         Configuration config = Configuration.getInstance();
+        Constants constants = Constants.getInstance();
 
         // Prepare argument array in exact metadata order
         Object[] argsForFortran = new Object[metadata.size()];
@@ -68,12 +70,10 @@ public class ExecuteDecomposeActs implements WorkerCommand {
                         value = setupValue.get();
                     }
 
-                } else {
-
-                    // Read input from the appropriate source
-                    value = p.source == ComputationParameter.Source.CONFIGURATION
-                            ? config.get(p.name)
-                            : results.get(p.name);
+                } else if (p.source == ComputationParameter.Source.CONFIGURATION) {
+                    value = config.get(p.name);
+                } else if (p.source == ComputationParameter.Source.CONSTANT){
+                    value = constants.get(p.name);
                 }
                 argsForFortran[i] = value;
 

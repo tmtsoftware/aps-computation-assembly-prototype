@@ -1,5 +1,6 @@
 package aps.computationprototypeassembly.commands;
 
+import aps.computationprototypeassembly.Constants;
 import aps.computationprototypeassembly.metadata.ComputationParameter;
 import csw.params.commands.Result;
 import csw.params.core.models.Id;
@@ -22,9 +23,9 @@ public class ExecuteTtOffsetsToActs implements WorkerCommand {
     private Setup setup;
 
     private static final List<ComputationParameter> metadata = List.of(
-            new ComputationParameter("actuatorPositionsX", float.class, new int[]{108}, ComputationParameter.Source.CONFIGURATION, ComputationParameter.Direction.INPUT),
-            new ComputationParameter("actuatorPositionsY", float.class, new int[]{108}, ComputationParameter.Source.CONFIGURATION, ComputationParameter.Direction.INPUT),
-            new ComputationParameter("secPerPix", float.class, new int[]{}, ComputationParameter.Source.CONFIGURATION, ComputationParameter.Direction.INPUT),
+            new ComputationParameter("actuatorPositionsX", float.class, new int[]{108}, ComputationParameter.Source.CONSTANT, ComputationParameter.Direction.INPUT),
+            new ComputationParameter("actuatorPositionsY", float.class, new int[]{108}, ComputationParameter.Source.CONSTANT, ComputationParameter.Direction.INPUT),
+            new ComputationParameter("secPerPix", float.class, new int[]{}, ComputationParameter.Source.CONSTANT, ComputationParameter.Direction.INPUT),
             new ComputationParameter("centroidOffsetsX", float.class, new int[]{36}, ComputationParameter.Source.RESULTS, ComputationParameter.Direction.INPUT),
             new ComputationParameter("centroidOffsetsY", float.class, new int[]{36}, ComputationParameter.Source.RESULTS, ComputationParameter.Direction.INPUT),
             new ComputationParameter("mirrorConfig", int.class, new int[]{36}, ComputationParameter.Source.CONFIGURATION, ComputationParameter.Direction.INPUT),
@@ -47,6 +48,7 @@ public class ExecuteTtOffsetsToActs implements WorkerCommand {
 
         Results results = Results.getInstance();
         Configuration config = Configuration.getInstance();
+        Constants constants = Constants.getInstance();
 
         // Prepare argument array in exact metadata order
         Object[] argsForFortran = new Object[metadata.size()];
@@ -74,12 +76,10 @@ public class ExecuteTtOffsetsToActs implements WorkerCommand {
                         value = setupValue.get();
                     }
 
-                } else {
-
-                    // Read input from the appropriate source
-                    value = p.source == ComputationParameter.Source.CONFIGURATION
-                            ? config.get(p.name)
-                            : results.get(p.name);
+                } else if (p.source == ComputationParameter.Source.CONFIGURATION) {
+                    value = config.get(p.name);
+                } else if (p.source == ComputationParameter.Source.CONSTANT){
+                    value = constants.get(p.name);
                 }
                 argsForFortran[i] = value;
 

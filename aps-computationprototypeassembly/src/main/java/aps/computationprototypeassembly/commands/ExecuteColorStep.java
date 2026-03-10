@@ -1,5 +1,6 @@
 package aps.computationprototypeassembly.commands;
 
+import aps.computationprototypeassembly.Constants;
 import csw.params.commands.Result;
 import csw.params.core.models.Id;
 import csw.params.core.models.ArrayData;
@@ -47,6 +48,7 @@ public class ExecuteColorStep implements WorkerCommand {
 
         Results results = Results.getInstance();
         Configuration config = Configuration.getInstance();
+        Constants constants = Constants.getInstance();
 
         // Prepare argument array in exact metadata order
         Object[] argsForFortran = new Object[metadata.size()];
@@ -62,14 +64,23 @@ public class ExecuteColorStep implements WorkerCommand {
                 Optional<?> setupValue = extractFromSetup(p);
 
                 if (setupValue.isPresent()) {
-                    value = setupValue.get();
-                } else {
-                    // Fallback to original source
-                    value = (p.source == ComputationParameter.Source.CONFIGURATION)
-                            ? config.get(p.name)
-                            : results.get(p.name);
-                }
+                    // we have a setup override, either use results name or actual value
+                    Object overrideValue = setupValue.get();
 
+                    if (overrideValue instanceof String) {
+                        // use reference value from cmd
+                        String referenceKey = (String) overrideValue;
+                        value = results.get(referenceKey);
+                    } else {
+                        // use value directly from command
+                        value = setupValue.get();
+                    }
+
+                } else if (p.source == ComputationParameter.Source.CONFIGURATION) {
+                    value = config.get(p.name);
+                } else if (p.source == ComputationParameter.Source.CONSTANT){
+                    value = constants.get(p.name);
+                }
                 argsForFortran[i] = value;
 
             } else {
