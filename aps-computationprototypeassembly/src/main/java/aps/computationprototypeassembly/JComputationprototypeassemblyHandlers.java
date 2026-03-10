@@ -66,6 +66,7 @@ public class JComputationprototypeassemblyHandlers extends JComponentHandlers {
         HoconReader hoconReader = new HoconReader();
 
         String[] filenames = {
+                // ── 15 APS DB generator output files ───────────────────────────────────────────────────
                 "APS_DB_FS_6_rectangular_array",
                 "APS_DB_FS_6_rings_global_xy_scaled",
                 "APS_DB_FS_6_rings_local_xy_unscaled",
@@ -80,9 +81,15 @@ public class JComputationprototypeassemblyHandlers extends JComponentHandlers {
                 "APS_DB_optimal_FI_freqs_8192_6_rings",
                 "APS_DB_ref_def_tmt_8192_FS_6",
                 "APS_DB_segment_colors",
-                "APS_DB_segment_sensor_numbers_2_subap"
+                "APS_DB_segment_sensor_numbers_2_subap",
+                // ── 6 APS DB generator input files likely to be used in fortran ─────────────────────────
+                "APS_DB_actuators_xy",
+                "APS_DB_seg_ctrs",
+                "APS_DB_sensor_data",
+                "APS_DB_ungapped_vertices",
+                "APS_DB_m1cs_sensor_numbering",
+                "APS_DB_Amatrix_Leff"
         };
-
         for (String filename : filenames) {
             Path filePath = Paths.get("tmt/aps/db/" + filename + ".conf");
             try {

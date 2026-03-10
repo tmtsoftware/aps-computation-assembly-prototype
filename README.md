@@ -11,8 +11,7 @@ Each is implemented as a worker that handles the named command.
 Fortran computations are called from the AlgorithmLibrary class, referenced within each WorkerCommand implementation class.
 
 ### WorkerCommands
-Worker command implementation classes are named using suffixes: NFC (no inupt arguments from command, only from services), AFC (all input and output arguments are supplied by command).  This allows the same function name to be called in different ways.
-
+#### Command Metadata
 Each WorkerCommand implementation contains metadata about the parameters passed to the Fortran function:
 * name - used to load and store values from Configuration or Result singletons
 * class
@@ -24,13 +23,41 @@ The WorkerCommand implementation classes each prepare the arguments to the Algor
 
 Constants are loaded during initialization.  Setup and configuration parameters are loaded using commands: loadSetup, loadConfig.
 
-#### ExecuteColorStepNFC
+#### ExecuteColorStep
 A colorstep function command that gets inputs from configuration and outputs to procedure data service.
-#### ExecuteTtOffsetsToActsNFC
+#### ExecuteTtOffsetsToActs
 Executes ttOffsetsToActs, using non-command parameter inputs and outputs
-#### ExecuteDecomposeActsNFC
+#### ExecuteDecomposeActs
 Executes decomposeActs using non-command parameter inputs including procedure data service to get inputs that were outputs of ttOffsetsToActs.
 #### 
+
+### Command Handling and Function Argument Construction
+Command arguments share the same names as the function formal parameter names in the metadata.
+
+Command passed data always overrides metadata defaults 
+
+Command passed data can be references to Constants, Configuration or previous computation results, but can also be direct values from the caller.
+
+Computation result data accessed as input data is always function contexted within the command argument, e.g. (name = "desiredActDeltas", value = "ttOffsetsToActs.desiredActDeltas").  
+
+All result data input references that are derived from previous computation outputs are required to be sent in the command.  This is the default design: the caller (eventually the sequencer) orchestrates when outputs of one computation are used as inputs to another.  This namespaces each function's formal parameters, preventing name collisions across functions.
+
+### Loading Constants during Assembly initialize()
+Loading APS constants used in algorithm function at assembly initialize() saves time in not having to pass them or retrieve them from a service.
+One concern is the actual size of the data and the time to load it.  The prototype addresses these by simulating the outputs of the 
+APS DB generator built by Matthias Schoeck.  15 output configuration files were generated along with 6 of the input files that were deemed likely 
+to be used as inputs to the algorithms.  All other currently identified constants are negligable in size.
+
+All simulated configuration files are part of this project (aps-compuationprototypeassembly/src/main/resources) and the project includes a script: "load-aps-db-to-csw.sh" to load these files into
+the CSW configuation serivce.  In total, they are about 35 MB in size.
+
+The initialize() hook uses the HoconReader and the Constants singleton (both prototyped in this project) to create constants that match the fortran 
+conventions of only passing int, float or arrays of int or float.  The constants have the configuration file (without the .conf) as a prefix, and the 
+column name as the suffix for each array of int or float constants.
+
+Testing revealed that initialization took about ten (10) seconds.  The JComputationprototypeassemblyStandalone.conf file was updated with
+```initializeTimeout = "20 seconds"``` to avoid any timeout errors. 
+
 
 ### Next Steps
 Result singleton will be replaced by a prototype ProcedureDataService, and ultimately backed by a relational database.
