@@ -65,9 +65,10 @@ Setup, Constant and Configuration singletons and loading commands.
 
 ## Subprojects
 
-* aps-computationprototypeassembly - an assembly that talks to the computationPrototype HCD
+* aps-computationprototypeassembly - the computation assembly that wraps the Algorithm Library
 * aps-computationprototypehcd - not used
 * aps-computationprototypedeploy - for starting assembly
+* aps-computationclient - used to send commands to the assembly for testing purposes
 
 ## Upgrading CSW Version
 
