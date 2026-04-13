@@ -1,6 +1,6 @@
 package aps.computationprototypeassembly;
 
-import csw.config.client.javadsl.JConfigClientFactory;
+import csw.config.api.ConfigData;
 import csw.config.api.javadsl.IConfigClientService;
 
 import org.apache.pekko.actor.typed.ActorRef;
@@ -13,22 +13,17 @@ import csw.location.api.models.TrackingEvent;
 import csw.logging.api.javadsl.ILogger;
 import csw.params.commands.*;
 import csw.params.core.models.Id;
-import csw.params.core.generics.Key;
-import csw.params.javadsl.JKeyType;
-import csw.params.core.models.ArrayData;
 import csw.time.core.models.UTCTime;
 
-import csw.config.api.ConfigData;
 import com.typesafe.config.Config;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
-import java.util.List;
-import csw.config.models.ConfigFileInfo;
 
 import aps.computationprototypeassembly.worker.CommandWorker;
 import aps.computationprototypeassembly.commands.*;
+import org.tmt.aps.peas.lang.interop.RetVal;
 
 public class JComputationprototypeassemblyHandlers extends JComponentHandlers {
 
@@ -36,6 +31,7 @@ public class JComputationprototypeassemblyHandlers extends JComponentHandlers {
     private final ILogger log;
     private final ActorContext<TopLevelActorMessage> actorContext;
     private final ActorRef<WorkerCommand> workerActor;
+    private final ResultsStore resultsStore;
 
     private IConfigClientService configClient;
 
@@ -49,8 +45,9 @@ public class JComputationprototypeassemblyHandlers extends JComponentHandlers {
 
         configClient = cswCtx.configClientService();
 
+        // Build the ResultsStore once — shared across all command dispatches
+        this.resultsStore = CommandWorker.buildResultsStore(ctx);
 
-        // Spawn the new CommandWorker actor
         this.workerActor = actorContext.spawn(
                 CommandWorker.create(cswCtx),
                 "CommandWorker"
@@ -62,11 +59,9 @@ public class JComputationprototypeassemblyHandlers extends JComponentHandlers {
     @Override
     public void initialize() {
         IConfigClientService configClient = cswCtx.configClientService();
-
         HoconReader hoconReader = new HoconReader();
 
         String[] filenames = {
-                // ── 15 APS DB generator output files ───────────────────────────────────────────────────
                 "APS_DB_FS_6_rectangular_array",
                 "APS_DB_FS_6_rings_global_xy_scaled",
                 "APS_DB_FS_6_rings_local_xy_unscaled",
@@ -82,7 +77,6 @@ public class JComputationprototypeassemblyHandlers extends JComponentHandlers {
                 "APS_DB_ref_def_tmt_8192_FS_6",
                 "APS_DB_segment_colors",
                 "APS_DB_segment_sensor_numbers_2_subap",
-                // ── 6 APS DB generator input files likely to be used in fortran ─────────────────────────
                 "APS_DB_actuators_xy",
                 "APS_DB_seg_ctrs",
                 "APS_DB_sensor_data",
@@ -90,6 +84,7 @@ public class JComputationprototypeassemblyHandlers extends JComponentHandlers {
                 "APS_DB_m1cs_sensor_numbering",
                 "APS_DB_Amatrix_Leff"
         };
+
         for (String filename : filenames) {
             Path filePath = Paths.get("tmt/aps/db/" + filename + ".conf");
             try {
@@ -103,38 +98,55 @@ public class JComputationprototypeassemblyHandlers extends JComponentHandlers {
                 throw new RuntimeException("Failed to load: " + filePath, e);
             }
         }
+
+        log.info("Initializing computationPrototypeAssembly...");
+        System.loadLibrary("peas");
+
+        AlgorithmLibrary algorithmLibrary = new AlgorithmLibrary(cswCtx);
+
+        int stepCount = 11;
+        float stepSizeMicrons = 20.0f;
+        float stepSizeNm = stepSizeMicrons * 1000.0f;
+        RetVal retVal = new RetVal();
+
+        log.info("computation.starting: colorStep");
+
+        try {
+
+            double t1 = System.nanoTime();
+            float[][] colorsteps = new float[36][3];
+            algorithmLibrary.colorStep(stepCount, stepSizeNm, colorsteps);
+            double t2 = System.nanoTime();
+
+            for (int i=0; i<stepCount+1; i++){
+                for (int j = 0; j < 3; j++){
+                    log.info("i,j = " + i + "," + j + "   colorstep = " + colorsteps[i][j]);
+                }
+            }
+            log.info("computation.success colorStep: time to execute = " + (t2-t1)/1000000.0 + " ms");
+
+        } catch (Exception e) {
+            log.error(e.getMessage());
+        }
+
+
+
+
     }
-    @Override
-    public void onShutdown() {
-        // Cleanup logic if needed
-    }
 
-    @Override
-    public void onLocationTrackingEvent(TrackingEvent trackingEvent) {
-        // Handle location events if needed
-    }
-
-    @Override
-    public void onGoOffline() { }
-
-    @Override
-    public void onGoOnline() { }
-
-    @Override
-    public void onDiagnosticMode(UTCTime startTime, String hint) { }
-
-    @Override
-    public void onOperationsMode() { }
-
-    @Override
-    public void onOneway(Id runId, ControlCommand controlCommand) { }
+    @Override public void onShutdown() {}
+    @Override public void onLocationTrackingEvent(TrackingEvent trackingEvent) {}
+    @Override public void onGoOffline() {}
+    @Override public void onGoOnline() {}
+    @Override public void onDiagnosticMode(UTCTime startTime, String hint) {}
+    @Override public void onOperationsMode() {}
+    @Override public void onOneway(Id runId, ControlCommand controlCommand) {}
 
     // ================== Command Validation ==================
 
     @Override
     public CommandResponse.ValidateCommandResponse validateCommand(Id runId, ControlCommand controlCommand) {
         String commandName = controlCommand.commandName().name();
-
         switch (commandName) {
             case "colorStep", "ttOffsetsToActs", "decomposeActs":
                 return new CommandResponse.Accepted(runId);
@@ -153,32 +165,23 @@ public class JComputationprototypeassemblyHandlers extends JComponentHandlers {
 
         log.info("Handling command: " + controlCommand.commandName());
 
-        if (!(controlCommand instanceof Setup setup)) {
+        if (!(controlCommand instanceof Setup)) {
             return new CommandResponse.Error(runId, "Only Setup supported");
         }
 
-        String commandName = controlCommand.commandName().name();
-
-        switch (commandName) {
-
+        switch (controlCommand.commandName().name()) {
             case "colorStep" -> {
-
-
-                workerActor.tell(new ExecuteColorStep(runId, controlCommand));
-
+                workerActor.tell(new ExecuteColorStep(runId, controlCommand, resultsStore));
                 return new CommandResponse.Started(runId);
             }
-
             case "ttOffsetsToActs" -> {
-                workerActor.tell(new ExecuteTtOffsetsToActs(runId, controlCommand));
+                workerActor.tell(new ExecuteTtOffsetsToActs(runId, controlCommand, resultsStore));
                 return new CommandResponse.Started(runId);
             }
-
             case "decomposeActs" -> {
-                workerActor.tell(new ExecuteDecomposeActs(runId, controlCommand));
+                workerActor.tell(new ExecuteDecomposeActs(runId, controlCommand, resultsStore));
                 return new CommandResponse.Started(runId);
             }
-
             default -> {
                 return new CommandResponse.Error(runId, "Unsupported command");
             }

@@ -47,6 +47,8 @@ public class AlgorithmLibrary {
        float[] centroidOffsetsX, float[] centroidOffsetsY, int[] mirrorConfig, float[] xOffsetsOut, float[] yOffsetsOut,
        float[][] desiredActDeltas) throws Exception {
 
+        log.info("IN TT OFFSETS TO ACTS");
+
         JttOffsetsToActs jttOffsetsToActs = new JttOffsetsToActs();
         RetVal retVal = new RetVal();
 
@@ -107,6 +109,8 @@ public class AlgorithmLibrary {
         if (retVal.getCode() > 0) {
             throw new Exception("Decompose Actuators Calculation Error:  " + retVal);
         }
+
+        log.info("tipTiltActs: " + printArrayRecursive(tipTiltActs, 0) + ", pistonActs: " + printArrayRecursive(pistonActs, 0));
 
     }
 
@@ -211,4 +215,48 @@ public class AlgorithmLibrary {
 
 
 
-}
+
+
+    private StringBuffer printArrayRecursive(Object value, int indentLevel) {
+
+        StringBuffer buf = new StringBuffer();
+
+        Class<?> clazz = value.getClass();
+
+        if (!clazz.isArray()) {
+            buf.append(value);
+            return buf;
+        }
+
+        int length = java.lang.reflect.Array.getLength(value);
+
+        buf.append("[");
+        for (int i = 0; i < length; i++) {
+
+            Object element = java.lang.reflect.Array.get(value, i);
+
+            if (element != null && element.getClass().isArray()) {
+                buf.append("\n");
+                printIndent(buf,indentLevel + 1);
+                printArrayRecursive(element, indentLevel + 1);
+            } else {
+                buf.append(element);
+            }
+
+            if (i < length - 1) {
+                buf.append(", ");
+            }
+        }
+        buf.append("]");
+
+        return buf;
+    }
+
+    private void printIndent(StringBuffer buf, int level) {
+        for (int i = 0; i < level; i++) {
+            buf.append("  ");
+        }
+    }
+
+
+    }
