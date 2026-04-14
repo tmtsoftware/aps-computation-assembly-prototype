@@ -1,2 +1,12 @@
-[0m[[0m[0minfo[0m] [0m[0m/Users/smichaels/Desktop/Prototyping/aps-computation-assembly-prototype/aps-computationprototypeassembly/src/main/java/aps/computationprototypeassembly/JComputationprototypeassemblyHandlers.java: JComputationprototypeassemblyHandlers.java uses unchecked or unsafe operations.[0m
-[0m[[0m[0minfo[0m] [0m[0m/Users/smichaels/Desktop/Prototyping/aps-computation-assembly-prototype/aps-computationprototypeassembly/src/main/java/aps/computationprototypeassembly/JComputationprototypeassemblyHandlers.java: Recompile with -Xlint:unchecked for details.[0m
+[0m[[0m[31merror[0m] [0m[0m/Users/smichaels/Desktop/Prototyping/aps-computation-assembly-prototype/aps-computationprototypeassembly/src/main/java/aps/computationprototypeassembly/JComputationprototypeassemblyHandlers.java:105:45: constructor AlgorithmLibrary in class aps.computationprototypeassembly.AlgorithmLibrary cannot be applied to given types;[0m
+[0m[[0m[31merror[0m] [0m[0m  required: csw.framework.models.JCswContext[0m
+[0m[[0m[31merror[0m] [0m[0m  found:    no arguments[0m
+[0m[[0m[31merror[0m] [0m[0m  reason: actual and formal argument lists differ in length[0m
+[0m[[0m[31merror[0m] [0m[0mnew AlgorithmLibrary()[0m
+[0m[[0m[31merror[0m] [0m[0m                      ^[0m
+[0m[[0m[31merror[0m] [0m[0m/Users/smichaels/Desktop/Prototyping/aps-computation-assembly-prototype/aps-computationprototypeassembly/src/main/java/aps/computationprototypeassembly/JComputationprototypeassemblyHandlers.java:117:52: method colorStep in class aps.computationprototypeassembly.AlgorithmLibrary cannot be applied to given types;[0m
+[0m[[0m[31merror[0m] [0m[0m  required: int,float,float[][][0m
+[0m[[0m[31merror[0m] [0m[0m  found:    int,float[0m
+[0m[[0m[31merror[0m] [0m[0m  reason: actual and formal argument lists differ in length[0m
+[0m[[0m[31merror[0m] [0m[0malgorithmLibrary.colorStep[0m
+[0m[[0m[31merror[0m] [0m[0m                          ^[0m
