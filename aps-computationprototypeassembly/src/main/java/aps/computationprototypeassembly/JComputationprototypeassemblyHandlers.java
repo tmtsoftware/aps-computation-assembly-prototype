@@ -19,6 +19,7 @@ import com.typesafe.config.Config;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
+import java.util.Random;
 import java.util.concurrent.ExecutionException;
 
 import aps.computationprototypeassembly.worker.CommandWorker;
@@ -85,6 +86,7 @@ public class JComputationprototypeassemblyHandlers extends JComponentHandlers {
                 "APS_DB_Amatrix_Leff"
         };
 
+        /*
         for (String filename : filenames) {
             Path filePath = Paths.get("tmt/aps/db/" + filename + ".conf");
             try {
@@ -98,7 +100,8 @@ public class JComputationprototypeassemblyHandlers extends JComponentHandlers {
                 throw new RuntimeException("Failed to load: " + filePath, e);
             }
         }
-
+        */
+        
         log.info("Initializing computationPrototypeAssembly...");
         System.loadLibrary("peas");
 
@@ -129,9 +132,28 @@ public class JComputationprototypeassemblyHandlers extends JComponentHandlers {
             log.error(e.getMessage());
         }
 
+        // build an 8120 x 8120 float array with random data
+        int size = 8120;
+        float[][] frame = new float[size][size];
+        Random random = new Random();
 
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                frame[i][j] = random.nextFloat() * 10000f;
+            }
+        }
 
+        int[] numFilledBoxes = new int[1];
 
+        try {
+            double t1 = System.nanoTime();
+            algorithmLibrary.testApsFrame(frame, numFilledBoxes);
+            double t2 = System.nanoTime();
+            log.info("computation.success testApsFrame: time to execute = " + (t2 - t1) / 1000000.0 + " ms");
+        } catch (Exception e) {
+            log.error(e.getMessage());
+        }
+        System.out.println("numFilledBoxes = " + numFilledBoxes[0]);
     }
 
     @Override public void onShutdown() {}

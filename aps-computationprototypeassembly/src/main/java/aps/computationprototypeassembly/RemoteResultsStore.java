@@ -39,18 +39,12 @@ public class RemoteResultsStore implements ResultsStore {
      * Fetches all Source.RESULTS input parameters from the service in one call
      * and caches them locally. Called by AbstractExecuteCommand before the resolution loop.
      */
-    public void prefetch(String commandName, List<ComputationParameter> metadata) throws Exception {
-        List<ComputationParameter> resultsInputs = metadata.stream()
-                .filter(p -> p.direction == ComputationParameter.Direction.INPUT
-                          && p.source    == ComputationParameter.Source.RESULTS)
-                .toList();
-
-        if (resultsInputs.isEmpty()) return;
+    public void prefetch(String commandName, List<ComputationParameter> metadata, Map<String, String> referenceOverrides) throws Exception {
+        if (referenceOverrides.isEmpty()) return;
 
         inputCache.clear();
-        inputCache.putAll(client.fetchInputs(commandName, resultsInputs, iterationNumber));
+        inputCache.putAll(client.fetchInputs(referenceOverrides, metadata, iterationNumber));
     }
-
     /**
      * Posts all Destination.RESULTS output parameters to the service in one call.
      * Called by AbstractExecuteCommand after the algorithm returns.

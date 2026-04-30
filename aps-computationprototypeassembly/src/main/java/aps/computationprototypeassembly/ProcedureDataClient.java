@@ -58,7 +58,7 @@ public class ProcedureDataClient {
     // FETCH: POST /getProcedureResultData
     // Returns a map of fieldName -> deserialised Java value.
     // -------------------------------------------------------------------------
-    public Map<String, Object> fetchInputs(String commandName,
+    public Map<String, Object> fetchInputs(Map<String, String> references,
                                            List<ComputationParameter> metadata,
                                            int iterationNumber) throws Exception {
         // Build request body
@@ -66,10 +66,28 @@ public class ProcedureDataClient {
         root.put("procedureRunId", procedureRunId);
         ArrayNode keys = root.putArray("computationResultKeys");
 
-        for (ComputationParameter param : metadata) {
+        // Map refFieldName -> formalName for response decoding
+        Map<String, String> refFieldToFormalName = new HashMap<>();
+        // Map refFieldName -> ComputationParameter for decoding
+        Map<String, ComputationParameter> refFieldToParam = new HashMap<>();
+
+        for (Map.Entry<String, String> entry : references.entrySet()) {
+            String formalName         = entry.getKey();
+            String[] parts            = entry.getValue().split("\\.");
+            String refComputationName = parts[0];
+            String refFieldName       = parts[1];
+
+            refFieldToFormalName.put(refFieldName, formalName);
+
+            ComputationParameter param = metadata.stream()
+                    .filter(p -> p.name.equals(formalName))
+                    .findFirst()
+                    .orElseThrow(() -> new RuntimeException("No metadata for parameter [" + formalName + "]"));
+            refFieldToParam.put(refFieldName, param);
+
             ObjectNode key = keys.addObject();
-            key.put("computationName", commandName);
-            key.put("fieldName", param.name);
+            key.put("computationName", refComputationName);
+            key.put("fieldName", refFieldName);
             if (iterationNumber > 0) key.put("iterationNumber", iterationNumber);
         }
 
@@ -81,27 +99,21 @@ public class ProcedureDataClient {
 
         if (!response.status().isSuccess()) {
             response.discardEntityBytes(system);
-            throw new RuntimeException("getProcedureResultData failed for ["
-                    + commandName + "]: HTTP " + response.status());
+            throw new RuntimeException("getProcedureResultData failed: HTTP " + response.status());
         }
 
-        // Response is an array of ComputationKeyValuePair
         JsonNode responseArray = mapper.readTree(entityToString(response));
         Map<String, Object> result = new HashMap<>();
 
         for (JsonNode kvPair : responseArray) {
-            String fieldName = kvPair.get("key").get("fieldName").asText();
-            ComputationParameter param = metadata.stream()
-                    .filter(p -> p.name.equals(fieldName))
-                    .findFirst()
-                    .orElseThrow(() -> new RuntimeException(
-                            "Unexpected fieldName [" + fieldName + "] in service response"));
-            result.put(fieldName, decodeGenericValue(kvPair.get("value"), param));
+            String refFieldName = kvPair.get("key").get("fieldName").asText();
+            String formalName   = refFieldToFormalName.get(refFieldName);
+            ComputationParameter param = refFieldToParam.get(refFieldName);
+            result.put(formalName, decodeGenericValue(kvPair.get("value"), param));
         }
 
         return result;
     }
-
     // -------------------------------------------------------------------------
     // STORE: POST /storeProcedureComputationResults
     // Posts all output parameters as a ComputationKeyValuePairList in one call.

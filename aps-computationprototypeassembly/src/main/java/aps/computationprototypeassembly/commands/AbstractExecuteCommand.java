@@ -13,7 +13,9 @@ import csw.params.core.generics.Key;
 import csw.params.core.models.Id;
 import csw.params.javadsl.JKeyType;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -78,10 +80,18 @@ public abstract class AbstractExecuteCommand implements WorkerCommand {
         String cmdKey = commandKey();
 
         // ── 1. Prefetch all Source.RESULTS inputs in one call (remote only) ──
+// ── 1. Prefetch all Source.RESULTS inputs in one call (remote only) ──
         if (resultsStore instanceof RemoteResultsStore remote) {
-            remote.prefetch(cmdKey, metadata);
+            Map<String, String> referenceOverrides = new HashMap<>();
+            for (ComputationParameter p : metadata) {
+                Optional<?> setupValue = extractFromSetup(p);
+                if (setupValue.isPresent() && setupValue.get() instanceof String referenceKey
+                        && referenceKey.contains(".")) {
+                    referenceOverrides.put(p.name, referenceKey);
+                }
+            }
+            remote.prefetch(cmdKey, metadata, referenceOverrides);
         }
-
         Object[] args = new Object[metadata.size()];
 
         // ── 2. Resolve all INPUT parameters ──────────────────────────────────

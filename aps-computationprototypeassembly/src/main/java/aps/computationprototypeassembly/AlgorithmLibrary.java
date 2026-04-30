@@ -213,7 +213,22 @@ public class AlgorithmLibrary {
 
     }
 
+    public void testApsFrame(float[][] frame, int[] numFilledBoxes) throws Exception {
 
+        JtestApsFrame jtestApsFrame = new JtestApsFrame();
+        RetVal retVal = new RetVal();
+
+        float[][] arg1 = frame;
+
+        Object[] result0 = jtestApsFrame.jtestApsFrame(retVal, arg1);
+
+        numFilledBoxes[0] = (Integer)result0[0];
+
+        if (retVal.getCode() > 0) {
+            throw new Exception("colorStep calcuation error. " + retVal + ".  ");
+        }
+
+    }
 
 
 

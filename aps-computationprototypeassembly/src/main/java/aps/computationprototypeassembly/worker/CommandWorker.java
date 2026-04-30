@@ -19,7 +19,7 @@ public class CommandWorker {
     // -------------------------------------------------------------------------
     // Toggle to switch between local cache and remote procedure data service.
     // -------------------------------------------------------------------------
-    private static final boolean USE_REMOTE_RESULTS_STORE = false;
+    private static final boolean USE_REMOTE_RESULTS_STORE = true;
 
     private static final String PROCEDURE_SERVICE_HOST = "192.168.0.151";
     private static final int    PROCEDURE_SERVICE_PORT = 8084;
